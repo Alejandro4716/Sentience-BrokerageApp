@@ -42,8 +42,13 @@ struct MyPortfolioView: View {
                             Spacer()
                             VStack(alignment: .trailing) {
                                 Text("\(h.shares) shares").font(.caption)
-                                Text(h.avgPrice, format: .currency(code: "USD"))
-                                    .font(.subheadline)
+                                HStack(spacing: 4) {
+                                    Text("Avg Price:")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(h.avgPrice, format: .currency(code: "USD"))
+                                        .font(.subheadline)
+                                }
                             }
                         }
                     }

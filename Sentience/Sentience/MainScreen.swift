@@ -18,7 +18,7 @@ struct MainScreen: View {
         TabView(selection: $selectedTab) {
             
             // TAB 1: Watchlist
-            NavigationView {
+            NavigationStack {
                 List {
                     ForEach(watchlist.symbols, id: \.self) { sym in
                         NavigationLink(destination: StockDetailView(symbol: sym)) {
@@ -42,18 +42,18 @@ struct MainScreen: View {
                 Label("Watchlist", systemImage: "list.bullet")
             }
             .tag(0)
-            
+
             // TAB 2: My Portfolio
-            NavigationView {
+            NavigationStack {
                 MyPortfolioView()
             }
             .tabItem {
                 Label("My Stocks", systemImage: "chart.pie")
             }
             .tag(1)
-            
+
             // TAB 3: My Account
-            NavigationView {
+            NavigationStack {
                 AccountView()
             }
             .tabItem {
