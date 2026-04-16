@@ -169,8 +169,6 @@ def get_account(
 
 
 
-from decimal import Decimal  # make sure this is imported at top
-
 @app.post("/deposit", response_model=AccountResponse)
 def deposit_money(
     data: DepositRequest,

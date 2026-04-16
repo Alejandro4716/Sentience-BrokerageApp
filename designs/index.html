@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sentience — Design Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0a;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+    overflow-x: hidden;
+  }
+
+  .page-header {
+    text-align: center;
+    padding: 60px 20px 40px;
+  }
+  .page-header h1 {
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #555;
+    margin-bottom: 12px;
+  }
+  .page-header h2 {
+    font-size: 36px;
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+
+  .designs-grid {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px 40px 80px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .design-col {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .design-label {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .design-label .num {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: #444;
+  }
+  .design-label .title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+  .design-label .subtitle {
+    font-size: 12px;
+    color: #555;
+    margin-top: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  /* ──────────────────────────────────────
+     PHONE FRAME
+  ────────────────────────────────────── */
+  .phone {
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    border-radius: 44px;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .phone-inner {
+    border-radius: 34px;
+    overflow: hidden;
+    position: relative;
+    height: 640px;
+  }
+  .notch {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 30px;
+    border-radius: 0 0 18px 18px;
+    z-index: 100;
+  }
+
+  /* ──────────────────────────────────────
+     DESIGN 1 — NOIR / DARK SHADOWY
+  ────────────────────────────────────── */
+  .phone-noir {
+    background: #111;
+    box-shadow:
+      0 0 0 1px #222,
+      0 40px 80px rgba(0,0,0,0.9),
+      0 0 60px rgba(180,0,0,0.08);
+  }
+  .noir-label .title { color: #cc3333; }
+
+  .screen-noir {
+    background: #0c0c0c;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Atmospheric shadow layers */
+  .screen-noir::before {
+    content: '';
+    position: absolute;
+    top: -100px;
+    left: -60px;
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(150,0,0,0.15) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .screen-noir::after {
+    content: '';
+    position: absolute;
+    bottom: -80px;
+    right: -40px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(80,0,120,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .noir-header {
+    padding: 36px 20px 16px;
+    position: relative;
+    z-index: 1;
+  }
+  .noir-greeting {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #3a3a3a;
+    margin-bottom: 4px;
+  }
+  .noir-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #e8e8e8;
+    letter-spacing: -0.02em;
+  }
+
+  .noir-portfolio-card {
+    margin: 8px 16px;
+    background: linear-gradient(135deg, #161616 0%, #111 100%);
+    border: 1px solid #1e1e1e;
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 8px 32px rgba(0,0,0,0.6);
+  }
+  .noir-portfolio-label {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #333;
+    margin-bottom: 8px;
+  }
+  .noir-portfolio-value {
+    font-size: 32px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .noir-portfolio-change {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .noir-change-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: #cc3333;
+    background: rgba(180,0,0,0.12);
+    border: 1px solid rgba(180,0,0,0.2);
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+  .noir-change-badge.up { color: #8fbc8f; background: rgba(0,100,0,0.12); border-color: rgba(0,120,0,0.2); }
+  .noir-change-sub {
+    font-size: 10px;
+    color: #333;
+  }
+
+  /* mini chart */
+  .noir-chart {
+    height: 44px;
+    margin-top: 12px;
+    position: relative;
+  }
+  .noir-chart svg { width: 100%; height: 100%; }
+
+  .noir-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #1e1e1e, transparent);
+    margin: 12px 16px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .noir-section-label {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: #2e2e2e;
+    padding: 0 20px;
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .noir-holdings {
+    padding: 0 16px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .noir-holding {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    background: #0f0f0f;
+    border: 1px solid #181818;
+    border-radius: 10px;
+    gap: 12px;
+  }
+  .noir-ticker-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: #161616;
+    border: 1px solid #222;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+    color: #444;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .noir-holding-info { flex: 1; min-width: 0; }
+  .noir-holding-ticker { font-size: 12px; font-weight: 700; color: #ccc; }
+  .noir-holding-name { font-size: 9px; color: #2e2e2e; margin-top: 1px; }
+  .noir-holding-right { text-align: right; }
+  .noir-holding-price { font-size: 12px; font-weight: 600; color: #bbb; }
+  .noir-holding-pct { font-size: 9px; font-weight: 600; margin-top: 1px; }
+  .noir-holding-pct.up { color: #5a8a5a; }
+  .noir-holding-pct.dn { color: #8a3a3a; }
+
+  .noir-notch { background: #0c0c0c; }
+
+  /* ──────────────────────────────────────
+     DESIGN 2 — TECHY / HUD
+  ────────────────────────────────────── */
+  .phone-tech {
+    background: #050a05;
+    box-shadow:
+      0 0 0 1px #0d1f0d,
+      0 40px 80px rgba(0,0,0,0.9),
+      0 0 80px rgba(0,255,100,0.06);
+  }
+  .tech-label .title { color: #00ff88; }
+
+  .screen-tech {
+    background: #040904;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* scanlines */
+  .screen-tech::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,255,100,0.015) 2px,
+      rgba(0,255,100,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+  /* green glow */
+  .screen-tech::after {
+    content: '';
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(0,255,100,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .tech-header {
+    padding: 38px 16px 10px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .tech-logo {
+    font-size: 11px;
+    font-weight: 700;
+    color: #00ff88;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .tech-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 8px;
+    color: #00cc66;
+    letter-spacing: 0.1em;
+  }
+  .tech-status-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #00ff88;
+    box-shadow: 0 0 6px #00ff88;
+    animation: blink 2s infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .tech-main-display {
+    margin: 8px 12px;
+    border: 1px solid #0d2a0d;
+    border-radius: 8px;
+    padding: 14px;
+    position: relative;
+    z-index: 1;
+    background: rgba(0,255,100,0.02);
+  }
+  .tech-main-display::before {
+    content: 'PORTFOLIO_OVERVIEW';
+    position: absolute;
+    top: -6px;
+    left: 12px;
+    font-size: 7px;
+    letter-spacing: 0.2em;
+    color: #00cc66;
+    background: #040904;
+    padding: 0 6px;
+  }
+
+  .tech-value-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .tech-value {
+    font-size: 30px;
+    font-weight: 700;
+    color: #00ff88;
+    letter-spacing: -0.03em;
+    text-shadow: 0 0 20px rgba(0,255,100,0.4);
+    line-height: 1;
+  }
+  .tech-value-usd {
+    font-size: 10px;
+    color: #006633;
+    margin-bottom: 4px;
+    letter-spacing: 0.15em;
+  }
+  .tech-metrics {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .tech-metric { }
+  .tech-metric-label { font-size: 7px; color: #006633; letter-spacing: 0.15em; margin-bottom: 2px; }
+  .tech-metric-value { font-size: 11px; color: #00cc66; font-weight: 500; }
+  .tech-metric-value.pos { color: #00ff88; }
+  .tech-metric-value.neg { color: #ff4444; text-shadow: 0 0 10px rgba(255,50,50,0.3); }
+
+  .tech-chart-area {
+    margin: 8px 12px;
+    border: 1px solid #0d2a0d;
+    border-radius: 8px;
+    padding: 10px;
+    position: relative;
+    z-index: 1;
+    background: rgba(0,255,100,0.01);
+  }
+  .tech-chart-area::before {
+    content: 'EQUITY_CURVE // 1D';
+    position: absolute;
+    top: -6px;
+    left: 12px;
+    font-size: 7px;
+    letter-spacing: 0.2em;
+    color: #00cc66;
+    background: #040904;
+    padding: 0 6px;
+  }
+  .tech-chart-area svg { width: 100%; height: 60px; display: block; }
+
+  .tech-ticker-grid {
+    margin: 8px 12px 0;
+    border: 1px solid #0d2a0d;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+  .tech-ticker-grid::before {
+    content: 'POSITIONS // LIVE';
+    position: absolute;
+    top: -6px;
+    left: 12px;
+    font-size: 7px;
+    letter-spacing: 0.2em;
+    color: #00cc66;
+    background: #040904;
+    padding: 0 6px;
+    z-index: 2;
+  }
+  .tech-ticker-header {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 14px 12px 6px;
+    font-size: 7px;
+    letter-spacing: 0.15em;
+    color: #006633;
+    border-bottom: 1px solid #0d2a0d;
+    background: rgba(0,255,100,0.02);
+  }
+  .tech-ticker-header span:last-child { text-align: right; }
+  .tech-ticker-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    padding: 7px 12px;
+    border-bottom: 1px solid rgba(0,80,30,0.3);
+    align-items: center;
+  }
+  .tech-ticker-row:last-child { border-bottom: none; }
+  .tech-sym { font-size: 11px; font-weight: 700; color: #00cc66; }
+  .tech-px { font-size: 10px; color: #009944; }
+  .tech-chg { font-size: 10px; font-weight: 700; text-align: right; }
+  .tech-chg.pos { color: #00ff88; }
+  .tech-chg.neg { color: #ff4444; }
+
+  .tech-notch { background: #040904; }
+
+  /* ──────────────────────────────────────
+     DESIGN 3 — AURORA / MY CHOICE
+     Soft, premium — indigo + gold + glass
+  ────────────────────────────────────── */
+  .phone-aurora {
+    background: #12102a;
+    box-shadow:
+      0 0 0 1px #1e1a40,
+      0 40px 80px rgba(0,0,0,0.8),
+      0 0 80px rgba(100,80,255,0.08);
+  }
+  .aurora-label .title {
+    background: linear-gradient(135deg, #a78bfa, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .screen-aurora {
+    background: #0e0c22;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Aurora background effect */
+  .aurora-bg {
+    position: absolute;
+    top: -80px;
+    left: -60px;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(ellipse, rgba(99,60,255,0.15) 0%, rgba(139,92,246,0.05) 40%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .aurora-bg-2 {
+    position: absolute;
+    top: 80px;
+    right: -80px;
+    width: 260px;
+    height: 260px;
+    background: radial-gradient(ellipse, rgba(245,158,11,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .aurora-header {
+    padding: 38px 20px 12px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .aurora-greeting {
+    font-size: 11px;
+    color: rgba(167,139,250,0.5);
+    margin-bottom: 2px;
+    font-weight: 400;
+  }
+  .aurora-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #e2d9ff;
+    letter-spacing: -0.01em;
+  }
+  .aurora-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed, #a78bfa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .aurora-hero {
+    margin: 4px 16px 0;
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(167,139,250,0.12);
+    border-radius: 20px;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .aurora-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(167,139,250,0.3), transparent);
+  }
+
+  .aurora-portfolio-label {
+    font-size: 10px;
+    color: rgba(167,139,250,0.45);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .aurora-portfolio-value {
+    font-size: 34px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .aurora-change-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .aurora-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(16,185,129,0.15);
+    color: #34d399;
+    border: 1px solid rgba(16,185,129,0.2);
+  }
+  .aurora-change-text {
+    font-size: 10px;
+    color: rgba(167,139,250,0.35);
+  }
+
+  /* sparkline in hero */
+  .aurora-sparkline {
+    margin-top: 14px;
+    height: 40px;
+    position: relative;
+  }
+  .aurora-sparkline svg { width: 100%; height: 100%; }
+
+  /* allocation pills */
+  .aurora-pills {
+    display: flex;
+    gap: 6px;
+    padding: 12px 16px;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .aurora-pill {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(167,139,250,0.1);
+    border-radius: 10px;
+    padding: 8px 6px;
+    text-align: center;
+  }
+  .aurora-pill-label {
+    font-size: 8px;
+    color: rgba(167,139,250,0.4);
+    letter-spacing: 0.08em;
+    margin-bottom: 3px;
+  }
+  .aurora-pill-val {
+    font-size: 13px;
+    font-weight: 700;
+    color: #c4b5fd;
+  }
+  .aurora-pill-sub {
+    font-size: 8px;
+    color: rgba(52,211,153,0.7);
+    margin-top: 1px;
+  }
+  .aurora-pill-sub.neg { color: rgba(239,68,68,0.7); }
+
+  .aurora-section-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: rgba(167,139,250,0.3);
+    padding: 4px 20px;
+    position: relative;
+    z-index: 1;
+    font-weight: 500;
+  }
+
+  .aurora-holdings {
+    padding: 0 16px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .aurora-holding {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(167,139,250,0.07);
+    border-radius: 12px;
+    gap: 12px;
+  }
+  .aurora-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 800;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+  }
+  .aurora-icon.aapl { background: linear-gradient(135deg, #1c1a2e, #2a2550); color: #a78bfa; border: 1px solid rgba(167,139,250,0.15); }
+  .aurora-icon.tsla { background: linear-gradient(135deg, #1c2220, #1e2d28); color: #34d399; border: 1px solid rgba(52,211,153,0.12); }
+  .aurora-icon.nvda { background: linear-gradient(135deg, #231c10, #2d2510); color: #f59e0b; border: 1px solid rgba(245,158,11,0.12); }
+
+  .aurora-holding-info { flex: 1; }
+  .aurora-holding-ticker { font-size: 13px; font-weight: 600; color: #ddd6fe; }
+  .aurora-holding-name { font-size: 9px; color: rgba(167,139,250,0.3); margin-top: 1px; }
+  .aurora-holding-right { text-align: right; }
+  .aurora-holding-price { font-size: 13px; font-weight: 600; color: #ede9fe; }
+  .aurora-holding-pct { font-size: 9px; font-weight: 600; margin-top: 2px; }
+  .aurora-holding-pct.up { color: #34d399; }
+  .aurora-holding-pct.dn { color: #f87171; }
+
+  .aurora-notch { background: #0e0c22; }
+
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Sentience Brokerage App</h1>
+  <h2>Visual Design Concepts</h2>
+</div>
+
+<div class="designs-grid">
+
+  <!-- ── DESIGN 1: NOIR ── -->
+  <div class="design-col">
+    <div class="design-label noir-label">
+      <div class="num">Concept 01</div>
+      <div class="title">Noir</div>
+      <div class="subtitle">Dark / Shadowy / Brutal</div>
+    </div>
+    <div class="phone phone-noir">
+      <div class="phone-inner">
+        <div class="notch noir-notch"></div>
+        <div class="screen-noir">
+
+          <div class="noir-header">
+            <div class="noir-greeting">Welcome back</div>
+            <div class="noir-name">Alejandro</div>
+          </div>
+
+          <div class="noir-portfolio-card">
+            <div class="noir-portfolio-label">Total Portfolio Value</div>
+            <div class="noir-portfolio-value">$84,291.40</div>
+            <div class="noir-portfolio-change">
+              <span class="noir-change-badge up">+$1,247.83</span>
+              <span class="noir-change-sub">+1.50% today</span>
+            </div>
+            <div class="noir-chart">
+              <svg viewBox="0 0 260 44" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="ng" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#8fbc8f" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#8fbc8f" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0 38 C20 36 30 34 50 30 C70 26 80 28 100 22 C120 16 130 20 150 14 C170 8 180 18 200 10 C220 2 240 8 260 4" stroke="#4a7a4a" stroke-width="1.5" fill="none"/>
+                <path d="M0 38 C20 36 30 34 50 30 C70 26 80 28 100 22 C120 16 130 20 150 14 C170 8 180 18 200 10 C220 2 240 8 260 4 L260 44 L0 44Z" fill="url(#ng)"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="noir-divider"></div>
+          <div class="noir-section-label">Holdings</div>
+
+          <div class="noir-holdings">
+            <div class="noir-holding">
+              <div class="noir-ticker-icon">AAPL</div>
+              <div class="noir-holding-info">
+                <div class="noir-holding-ticker">AAPL</div>
+                <div class="noir-holding-name">Apple Inc.</div>
+              </div>
+              <div class="noir-holding-right">
+                <div class="noir-holding-price">$213.40</div>
+                <div class="noir-holding-pct up">+2.14%</div>
+              </div>
+            </div>
+            <div class="noir-holding">
+              <div class="noir-ticker-icon">TSLA</div>
+              <div class="noir-holding-info">
+                <div class="noir-holding-ticker">TSLA</div>
+                <div class="noir-holding-name">Tesla Inc.</div>
+              </div>
+              <div class="noir-holding-right">
+                <div class="noir-holding-price">$174.85</div>
+                <div class="noir-holding-pct dn">−1.32%</div>
+              </div>
+            </div>
+            <div class="noir-holding">
+              <div class="noir-ticker-icon">NVDA</div>
+              <div class="noir-holding-info">
+                <div class="noir-holding-ticker">NVDA</div>
+                <div class="noir-holding-name">NVIDIA Corp.</div>
+              </div>
+              <div class="noir-holding-right">
+                <div class="noir-holding-price">$875.20</div>
+                <div class="noir-holding-pct up">+3.87%</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DESIGN 2: TECH ── -->
+  <div class="design-col">
+    <div class="design-label tech-label">
+      <div class="num">Concept 02</div>
+      <div class="title">Cypher</div>
+      <div class="subtitle">Terminal / HUD / Matrix</div>
+    </div>
+    <div class="phone phone-tech">
+      <div class="phone-inner">
+        <div class="notch tech-notch"></div>
+        <div class="screen-tech">
+
+          <div class="tech-header">
+            <div class="tech-logo">SENTIENCE</div>
+            <div class="tech-status">
+              <div class="tech-status-dot"></div>
+              LIVE
+            </div>
+          </div>
+
+          <div class="tech-main-display">
+            <div class="tech-value-row">
+              <div class="tech-value">84,291</div>
+              <div class="tech-value-usd">.40 USD</div>
+            </div>
+            <div class="tech-metrics">
+              <div class="tech-metric">
+                <div class="tech-metric-label">DAY_GAIN</div>
+                <div class="tech-metric-value pos">+$1,247.83</div>
+              </div>
+              <div class="tech-metric">
+                <div class="tech-metric-label">DAY_PCT</div>
+                <div class="tech-metric-value pos">+1.50%</div>
+              </div>
+              <div class="tech-metric">
+                <div class="tech-metric-label">BETA</div>
+                <div class="tech-metric-value">1.24</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tech-chart-area">
+            <svg viewBox="0 0 260 60" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#00ff88" stop-opacity="0.2"/>
+                  <stop offset="100%" stop-color="#00ff88" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- grid lines -->
+              <line x1="0" y1="15" x2="260" y2="15" stroke="#0d2a0d" stroke-width="0.5"/>
+              <line x1="0" y1="30" x2="260" y2="30" stroke="#0d2a0d" stroke-width="0.5"/>
+              <line x1="0" y1="45" x2="260" y2="45" stroke="#0d2a0d" stroke-width="0.5"/>
+              <line x1="65" y1="0" x2="65" y2="60" stroke="#0d2a0d" stroke-width="0.5"/>
+              <line x1="130" y1="0" x2="130" y2="60" stroke="#0d2a0d" stroke-width="0.5"/>
+              <line x1="195" y1="0" x2="195" y2="60" stroke="#0d2a0d" stroke-width="0.5"/>
+              <path d="M0 50 C20 48 35 44 55 38 C75 32 85 36 105 28 C125 20 135 26 155 16 C175 6 185 20 205 12 C225 4 245 10 260 6" stroke="#00ff88" stroke-width="1.5" fill="none" filter="url(#glow)"/>
+              <path d="M0 50 C20 48 35 44 55 38 C75 32 85 36 105 28 C125 20 135 26 155 16 C175 6 185 20 205 12 C225 4 245 10 260 6 L260 60 L0 60Z" fill="url(#tg)"/>
+              <defs>
+                <filter id="glow">
+                  <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                  <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+              </defs>
+            </svg>
+          </div>
+
+          <div class="tech-ticker-grid">
+            <div class="tech-ticker-header">
+              <span>SYM</span>
+              <span>PRICE</span>
+              <span style="text-align:right">CHG%</span>
+            </div>
+            <div class="tech-ticker-row">
+              <div class="tech-sym">AAPL</div>
+              <div class="tech-px">213.40</div>
+              <div class="tech-chg pos">+2.14%</div>
+            </div>
+            <div class="tech-ticker-row">
+              <div class="tech-sym">TSLA</div>
+              <div class="tech-px">174.85</div>
+              <div class="tech-chg neg">−1.32%</div>
+            </div>
+            <div class="tech-ticker-row">
+              <div class="tech-sym">NVDA</div>
+              <div class="tech-px">875.20</div>
+              <div class="tech-chg pos">+3.87%</div>
+            </div>
+            <div class="tech-ticker-row">
+              <div class="tech-sym">MSFT</div>
+              <div class="tech-px">418.60</div>
+              <div class="tech-chg pos">+0.94%</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── DESIGN 3: AURORA ── -->
+  <div class="design-col">
+    <div class="design-label aurora-label">
+      <div class="num">Concept 03</div>
+      <div class="title">Aurora</div>
+      <div class="subtitle">Glass / Indigo / Gold</div>
+    </div>
+    <div class="phone phone-aurora">
+      <div class="phone-inner">
+        <div class="notch aurora-notch"></div>
+        <div class="screen-aurora">
+          <div class="aurora-bg"></div>
+          <div class="aurora-bg-2"></div>
+
+          <div class="aurora-header">
+            <div>
+              <div class="aurora-greeting">Good morning</div>
+              <div class="aurora-name">Alejandro</div>
+            </div>
+            <div class="aurora-avatar">AM</div>
+          </div>
+
+          <div class="aurora-hero">
+            <div class="aurora-portfolio-label">Portfolio Value</div>
+            <div class="aurora-portfolio-value">$84,291</div>
+            <div class="aurora-change-row">
+              <span class="aurora-badge">+1.50% today</span>
+              <span class="aurora-change-text">+$1,247.83</span>
+            </div>
+            <div class="aurora-sparkline">
+              <svg viewBox="0 0 260 40" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="ag" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0 36 C20 34 30 30 50 26 C70 22 80 24 100 18 C120 12 130 16 150 10 C170 4 185 14 205 8 C225 2 245 6 260 3" stroke="url(#sg)" stroke-width="1.5" fill="none"/>
+                <defs>
+                  <linearGradient id="sg" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#7c3aed"/>
+                    <stop offset="100%" stop-color="#f59e0b"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0 36 C20 34 30 30 50 26 C70 22 80 24 100 18 C120 12 130 16 150 10 C170 4 185 14 205 8 C225 2 245 6 260 3 L260 40 L0 40Z" fill="url(#ag)"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="aurora-pills">
+            <div class="aurora-pill">
+              <div class="aurora-pill-label">STOCKS</div>
+              <div class="aurora-pill-val">72%</div>
+              <div class="aurora-pill-sub">+2.1%</div>
+            </div>
+            <div class="aurora-pill">
+              <div class="aurora-pill-label">ETFs</div>
+              <div class="aurora-pill-val">18%</div>
+              <div class="aurora-pill-sub">+0.8%</div>
+            </div>
+            <div class="aurora-pill">
+              <div class="aurora-pill-label">CASH</div>
+              <div class="aurora-pill-val">10%</div>
+              <div class="aurora-pill-sub neg">—</div>
+            </div>
+          </div>
+
+          <div class="aurora-section-label">Top Positions</div>
+
+          <div class="aurora-holdings">
+            <div class="aurora-holding">
+              <div class="aurora-icon aapl">AAPL</div>
+              <div class="aurora-holding-info">
+                <div class="aurora-holding-ticker">Apple</div>
+                <div class="aurora-holding-name">15 shares</div>
+              </div>
+              <div class="aurora-holding-right">
+                <div class="aurora-holding-price">$213.40</div>
+                <div class="aurora-holding-pct up">+2.14%</div>
+              </div>
+            </div>
+            <div class="aurora-holding">
+              <div class="aurora-icon tsla">TSLA</div>
+              <div class="aurora-holding-info">
+                <div class="aurora-holding-ticker">Tesla</div>
+                <div class="aurora-holding-name">8 shares</div>
+              </div>
+              <div class="aurora-holding-right">
+                <div class="aurora-holding-price">$174.85</div>
+                <div class="aurora-holding-pct dn">−1.32%</div>
+              </div>
+            </div>
+            <div class="aurora-holding">
+              <div class="aurora-icon nvda">NVDA</div>
+              <div class="aurora-holding-info">
+                <div class="aurora-holding-ticker">NVIDIA</div>
+                <div class="aurora-holding-name">4 shares</div>
+              </div>
+              <div class="aurora-holding-right">
+                <div class="aurora-holding-price">$875.20</div>
+                <div class="aurora-holding-pct up">+3.87%</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

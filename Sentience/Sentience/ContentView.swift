@@ -1,60 +1,107 @@
 import SwiftUI
 
-
-
 struct ContentView: View {
-    @State private var blink = false
+    @State private var appeared = false
+    @State private var pulse    = false
     @EnvironmentObject var flow: AppFlowStore
-    
-    
+
     var body: some View {
         ZStack {
-            
-            //visual gradient for design
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.0, green: 0.0, blue: 0.2),
-                    Color(red: 0.0, green: 0.0, blue: 0.5)
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
+            Color.vaultBg.ignoresSafeArea()
+
+            // Subtle radial glow centered on title
+            RadialGradient(
+                colors: [Color.vault.opacity(0.07), Color.clear],
+                center: .center,
+                startRadius: 10,
+                endRadius: 300
             )
             .ignoresSafeArea()
-            
-            //company and parent company name
-            VStack {
-                Spacer()
-                Text("Sentience")
-                    .foregroundColor(.yellow)
-                    .underline(true, color: .yellow)
-                    .font(.system(size: 48, weight: .semibold, design: .serif))
-                Text("by AMPS Financial")
-                    .foregroundColor(.yellow)
-                    .font(.system(size: 12, weight: .light, design: .serif))
-                Spacer()
-                Text("Tap to Begin")
-                    .foregroundColor(.white)
-                    .opacity(blink ? 0 : 1) //button blinks
-                    .padding(.bottom, 40)
-            }
-            .onAppear {
-                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-                    blink.toggle()
+
+            // Faint scan-line decoration
+            VStack(spacing: 18) {
+                ForEach(0..<20, id: \.self) { _ in
+                    Rectangle()
+                        .fill(Color(white: 1).opacity(0.018))
+                        .frame(height: 1)
+                        .frame(maxWidth: .infinity)
                 }
+            }
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                Spacer()
+
+                // Logo block
+                VStack(spacing: 16) {
+                    Text("SENTIENCE")
+                        .font(.system(size: 52, weight: .black))
+                        .foregroundColor(.vault)
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 18)
+                        .animation(.easeOut(duration: 0.7), value: appeared)
+
+                    // Accent rule
+                    HStack(spacing: 8) {
+                        Rectangle()
+                            .fill(Color.vault.opacity(0.35))
+                            .frame(height: 1)
+                            .frame(maxWidth: 48)
+                        Circle()
+                            .fill(Color.vault)
+                            .frame(width: 4, height: 4)
+                        Rectangle()
+                            .fill(Color.vault.opacity(0.35))
+                            .frame(height: 1)
+                            .frame(maxWidth: 48)
+                    }
+                    .opacity(appeared ? 1 : 0)
+                    .animation(.easeOut(duration: 0.7).delay(0.1), value: appeared)
+
+                    Text("by AMPS Financial")
+                        .font(.system(size: 13, weight: .regular))
+                        .foregroundColor(Color(white: 0.35))
+                        .tracking(2.5)
+                        .opacity(appeared ? 1 : 0)
+                        .animation(.easeOut(duration: 0.7).delay(0.2), value: appeared)
+                }
+
+                Spacer()
+
+                // Tap to begin
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(Color.vault)
+                        .frame(width: 5, height: 5)
+                        .scaleEffect(pulse ? 1.5 : 1.0)
+                        .opacity(pulse ? 0.3 : 1.0)
+
+                    Text("TAP TO BEGIN")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundColor(Color(white: 0.38))
+                        .tracking(3.5)
+                }
+                .opacity(appeared ? 1 : 0)
+                .animation(.easeOut(duration: 0.7).delay(0.4), value: appeared)
+                .padding(.bottom, 56)
             }
         }
         .contentShape(Rectangle())
         .onTapGesture { flow.showMain = true }
-        //when screen is tapped, move to next screen
+        .onAppear {
+            appeared = true
+            withAnimation(
+                .easeInOut(duration: 1.0)
+                .repeatForever(autoreverses: true)
+                .delay(0.6)
+            ) {
+                pulse = true
+            }
+        }
     }
 }
 
-
-
 #Preview {
     ContentView()
-        .environmentObject(PortfolioStore())
         .environmentObject(AppFlowStore())
-        .environmentObject(WatchlistStore())
 }
-

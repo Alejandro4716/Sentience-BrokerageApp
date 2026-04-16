@@ -1,7 +1,7 @@
 import os, jwt, datetime, bcrypt
 from uuid import UUID
 
-JWT_SECRET = "REPLACEME_WITH_A_RANDOM_SECRET"  # change this later
+JWT_SECRET = os.environ.get("JWT_SECRET", "REPLACEME_WITH_A_RANDOM_SECRET")
 JWT_ALG = "HS256"
 
 def hash_password(password: str) -> str:

@@ -7,60 +7,42 @@
 
 import Foundation
 
-enum Secrets {
-    static var finnhubAPIKey: String {
-        guard
-            let url = Bundle.main.url(forResource: "Secrets", withExtension: "plist"),
-            let data = try? Data(contentsOf: url),
-            let dict = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any],
-            let key = dict["FINNHUB_API_KEY"] as? String,
-            !key.isEmpty
-        else {
-            fatalError("Missing FINNHUB_API_KEY in Secrets.plist")
-        }
-        return key
-    }
+private let finnhubAPIKey = Secrets.finnhubAPIKey
+
+struct CandleData: Codable {
+    let c: [Double]?
+    let t: [Int]?
+    let s: String
 }
 
-
-
-
-
-//define class
 final class APIClient {
-    //make 1 instance
     static let shared = APIClient()
     private init() {}
 
-    //Finnhub API key
-    private let apiKey = Secrets.finnhubAPIKey
-
-    //functions search Finnhub for given ticker
-    //and returns json data
     func fetchQuote(symbol: String) async throws -> Quote {
-        
-        //prevention
-        guard let encodedSym = symbol.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
-            throw URLError(.badURL)
+        try await get("https://finnhub.io/api/v1/quote?symbol=\(pct(symbol))&token=\(finnhubAPIKey)")
+    }
+
+    func fetchCandles(symbol: String, resolution: String, from: Int, to: Int) async throws -> [Double] {
+        let url = "https://finnhub.io/api/v1/stock/candle?symbol=\(pct(symbol))&resolution=\(resolution)&from=\(from)&to=\(to)&token=\(finnhubAPIKey)"
+        let candle: CandleData = try await get(url)
+        guard candle.s == "ok", let closes = candle.c, !closes.isEmpty else {
+            throw FinnhubErrorResponse(error: "No candle data for \(symbol)")
         }
-        
-        //make url string
-        let urlStr = "https://finnhub.io/api/v1/quote?symbol=\(encodedSym)&token=\(apiKey)"
-        
-        //convert to url object
-        guard let url = URL(string: urlStr) else { throw URLError(.badURL) }
+        return closes
+    }
 
+    private func get<T: Decodable>(_ urlString: String) async throws -> T {
+        guard let url = URL(string: urlString) else { throw URLError(.badURL) }
         let (data, resp) = try await URLSession.shared.data(from: url)
-        let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
-
-        guard code == 200 else {
-            if let serverErr = try? JSONDecoder().decode(FinnhubErrorResponse.self, from: data) {
-                throw serverErr
-            }
+        guard (resp as? HTTPURLResponse)?.statusCode == 200 else {
+            if let e = try? JSONDecoder().decode(FinnhubErrorResponse.self, from: data) { throw e }
             throw URLError(.badServerResponse)
         }
+        return try JSONDecoder().decode(T.self, from: data)
+    }
 
-        //convert json into Quote model
-        return try JSONDecoder().decode(Quote.self, from: data)
+    private func pct(_ s: String) -> String {
+        s.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? s
     }
 }
