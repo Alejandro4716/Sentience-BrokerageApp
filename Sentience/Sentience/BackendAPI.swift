@@ -26,7 +26,8 @@ final class BackendAPI {
     static let shared = BackendAPI()
     private init() {}
 
-    private let base = "https://sentience-brokerageapp-production.up.railway.app"
+    //locally hosted backend
+    private let base = "http://127.0.0.1:8000"
 
     private func makeRequest(path: String, method: String, token: String? = nil, body: Data? = nil) throws -> URLRequest {
         
