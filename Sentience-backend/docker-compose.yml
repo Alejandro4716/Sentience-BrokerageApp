@@ -24,6 +24,7 @@ services:
       DATABASE_URL: postgresql+psycopg2://postgres:postgres@db:5432/sentience
       JWT_SECRET: dev_secret_change_me
       FINNHUB_API_KEY: ${FINNHUB_API_KEY}
+      FRONTEND_ORIGINS: http://127.0.0.1:8001,http://localhost:8001,https://alejandro4716.github.io
     ports:
       - "8000:8000"
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload

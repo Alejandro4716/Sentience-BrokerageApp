@@ -20,5 +20,5 @@ COPY . .
 # Expose FastAPI port
 EXPOSE 8000
 
-# Start FastAPI
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Start FastAPI. Hosted platforms such as Railway provide PORT at runtime.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

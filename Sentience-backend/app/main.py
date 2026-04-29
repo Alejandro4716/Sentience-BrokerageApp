@@ -21,9 +21,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Sentience Backend")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+def allowed_origins():
+    defaults = [
         "http://127.0.0.1:5173",
         "http://localhost:5173",
         "http://127.0.0.1:5500",
@@ -31,8 +30,13 @@ app.add_middleware(
         "http://127.0.0.1:8001",
         "http://localhost:8001",
         "https://alejandro4716.github.io",
-        "https://alejandro4716.github.io/Sentience-BrokerageApp",
-    ],
+    ]
+    extra = os.environ.get("FRONTEND_ORIGINS", "")
+    return defaults + [origin.strip().rstrip("/") for origin in extra.split(",") if origin.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
