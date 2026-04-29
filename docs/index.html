@@ -62,12 +62,17 @@
               </div>
             </section>
 
-            <section class="metrics">
-              <article class="metric"><span>PORTFOLIO</span><strong id="portfolioValue">$0.00</strong></article>
-              <article class="metric"><span>CASH</span><strong id="cashBalance">$0.00</strong></article>
-              <article class="metric"><span>DAY P&amp;L</span><strong id="dayPnl">$0.00</strong></article>
-              <article class="metric"><span>POSITIONS</span><strong id="positionCount">0</strong></article>
-            </section>
+            <aside class="portfolio-side">
+              <section class="metrics">
+                <article class="metric"><span>PORTFOLIO</span><strong id="portfolioValue">$0.00</strong></article>
+                <article class="metric"><span>CASH</span><strong id="cashBalance">$0.00</strong></article>
+                <article class="metric"><span>DAY P&amp;L</span><strong id="dayPnl">$0.00</strong></article>
+                <article class="metric"><span>POSITIONS</span><strong id="positionCount">0</strong></article>
+              </section>
+              <section class="portfolio-action-panel" id="portfolioActionPanel">
+                <p class="muted">Select a holding to trade from your portfolio.</p>
+              </section>
+            </aside>
           </div>
 
           <section class="table-panel">
@@ -102,16 +107,33 @@
         </section>
 
         <section class="view" id="tradeView">
-          <section class="trade-panel">
-            <form class="search-strip" id="tradeSearch">
-              <span>⌕</span>
-              <input id="tradeSymbol" placeholder="Enter ticker, e.g. AAPL" autocomplete="off" />
-              <button type="submit">GO</button>
-            </form>
-            <div class="trade-card" id="tradeCard">
-              <p class="muted">Search a ticker to view price and trade.</p>
-            </div>
-          </section>
+          <div class="trade-layout">
+            <section class="trade-panel">
+              <form class="search-strip" id="tradeSearch">
+                <span>⌕</span>
+                <input id="tradeSymbol" placeholder="Enter ticker, e.g. AAPL" autocomplete="off" />
+                <button type="submit">GO</button>
+              </form>
+              <div class="trade-card" id="tradeCard">
+                <p class="muted">Search a ticker to view price and trade.</p>
+              </div>
+            </section>
+            <aside class="trade-side">
+              <section class="trade-side-card">
+                <div class="section-head compact"><p>BUYING POWER</p></div>
+                <strong id="tradeCash">$0.00</strong>
+                <small id="tradePositionMeta">No active positions</small>
+              </section>
+              <section class="trade-side-card">
+                <div class="section-head compact"><p>YOUR POSITIONS</p></div>
+                <div class="mini-rows" id="tradeHoldingRows"></div>
+              </section>
+              <section class="trade-side-card">
+                <div class="section-head compact"><p>RECENT ACTIVITY</p></div>
+                <div class="mini-rows" id="tradeActivityRows"></div>
+              </section>
+            </aside>
+          </div>
         </section>
 
         <section class="view" id="accountView">

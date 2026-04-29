@@ -49,7 +49,7 @@ button {
 }
 
 .brand, .nav-tab, .session-pill, .market-state, .topbar-actions, .quote-line,
-.section-head, .inline-form, .search-strip, .trade-actions, .money-actions {
+.section-head, .inline-form, .search-strip, .trade-actions, .money-actions, .quick-trade-actions {
   display: flex;
   align-items: center;
 }
@@ -195,7 +195,8 @@ h1 {
   gap: 14px;
 }
 
-.feature-panel, .metric, .table-panel, .trade-card, .account-summary, .money-actions form {
+.feature-panel, .metric, .table-panel, .trade-card, .account-summary, .money-actions form,
+.portfolio-action-panel, .trade-side-card {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -279,6 +280,12 @@ canvas {
   color: #080808;
 }
 
+.portfolio-side {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -312,6 +319,10 @@ canvas {
   gap: 12px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--line);
+}
+
+.section-head.compact {
+  padding: 12px 14px;
 }
 
 .section-head span {
@@ -358,6 +369,68 @@ canvas {
 .positive { color: var(--vault); }
 .negative { color: var(--danger); }
 
+.portfolio-action-panel {
+  display: grid;
+  gap: 14px;
+  min-height: 172px;
+  padding: 16px;
+}
+
+.portfolio-action-panel h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.portfolio-action-panel .muted {
+  align-self: center;
+}
+
+.panel-kicker {
+  margin: 0 0 2px;
+  color: #666;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+
+.quick-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.quick-stats div {
+  min-height: 58px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+}
+
+.quick-stats small, .trade-side-card small {
+  display: block;
+  color: #666;
+}
+
+.quick-stats strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.quick-trade-form {
+  display: grid;
+  gap: 10px;
+}
+
+.quick-trade-actions {
+  gap: 8px;
+}
+
+.quick-trade-actions input {
+  min-width: 0;
+  flex: 1;
+}
+
 .ghost-button, .inline-form button, .search-strip button, .money-actions button,
 .bank-form button, .primary-button, .danger-button {
   min-height: 38px;
@@ -387,8 +460,15 @@ canvas {
   color: #080808;
 }
 
+.trade-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .75fr);
+  gap: 14px;
+  align-items: start;
+}
+
 .trade-panel {
-  max-width: 780px;
+  min-width: 0;
 }
 
 .search-strip {
@@ -426,6 +506,56 @@ canvas {
 
 .trade-actions input {
   width: 110px;
+}
+
+.trade-side {
+  display: grid;
+  gap: 14px;
+}
+
+.trade-side-card {
+  overflow: hidden;
+}
+
+.trade-side-card > strong {
+  display: block;
+  padding: 14px 14px 4px;
+  font-size: 30px;
+}
+
+.trade-side-card > small {
+  padding: 0 14px 14px;
+}
+
+.mini-rows {
+  min-height: 58px;
+}
+
+.mini-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 54px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid #2b2b2b;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.mini-row:last-child {
+  border-bottom: 0;
+}
+
+.mini-row strong, .mini-row small {
+  display: block;
+}
+
+.mini-row small {
+  color: #666;
 }
 
 .sell-button {
@@ -482,10 +612,34 @@ canvas {
 
 .bank-form {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   padding: 14px 16px;
   border-bottom: 1px solid var(--line);
+}
+
+.bank-form button {
+  grid-column: 1 / -1;
+}
+
+.bank-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.bank-row strong {
+  color: var(--text);
+}
+
+.bank-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(182, 232, 82, .45);
+  border-radius: 999px;
+  color: var(--vault);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .auth-dialog {
@@ -595,7 +749,7 @@ canvas {
     padding: 14px;
   }
 
-  .portfolio-grid, .market-layout, .account-grid {
+  .portfolio-grid, .market-layout, .account-grid, .trade-layout {
     grid-template-columns: 1fr;
   }
 

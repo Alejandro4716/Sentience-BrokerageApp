@@ -120,6 +120,7 @@ function render() {
   renderPortfolio();
   renderMarkets();
   renderAccount();
+  renderTradeSidebar();
 }
 
 function renderSession() {
@@ -178,6 +179,7 @@ function renderPortfolio() {
 
   $("holdingsRows").innerHTML = holdings.length ? holdings.map((h) => holdingRow(h, liveValue)).join("") :
     `<div class="row"><div><strong>No holdings yet</strong><small>Use Trade to buy your first stock.</small></div></div>`;
+  renderPortfolioTradePanel(selected, holdings, q);
 }
 
 function holdingRow(h, liveValue) {
@@ -191,6 +193,36 @@ function holdingRow(h, liveValue) {
     <div class="hide-mobile"><small>Weight</small><strong>${weight}</strong></div>
     <div class="right"><strong>${money(value)}</strong><small class="${klass}">${pct(q.dp || 0)}</small></div>
   </button>`;
+}
+
+function renderPortfolioTradePanel(symbol, holdings, quote) {
+  const panel = $("portfolioActionPanel");
+  const holding = holdings.find((h) => h.symbol === symbol);
+  if (!holding) {
+    panel.innerHTML = `<p class="muted">Select a holding to trade from your portfolio.</p>`;
+    return;
+  }
+
+  const price = quote?.c || holding.avg_price;
+  const value = price * holding.shares;
+  panel.innerHTML = `<form class="quick-trade-form" id="portfolioTradeForm">
+    <input type="hidden" id="portfolioActionSymbol" value="${holding.symbol}" />
+    <div>
+      <p class="panel-kicker">TRADE HOLDING</p>
+      <h3>${holding.symbol}</h3>
+      <p class="muted">${companyName(holding.symbol)}</p>
+    </div>
+    <div class="quick-stats">
+      <div><small>Price</small><strong>${money(price)}</strong></div>
+      <div><small>Owned</small><strong>${holding.shares}</strong></div>
+      <div><small>Value</small><strong>${money(value)}</strong></div>
+    </div>
+    <div class="quick-trade-actions">
+      <input id="portfolioShares" type="number" min="1" step="1" placeholder="Shares" />
+      <button class="primary-button" type="button" data-portfolio-side="buy">Buy</button>
+      <button class="sell-button" type="button" data-portfolio-side="sell">Sell</button>
+    </div>
+  </form>`;
 }
 
 function renderMarkets() {
@@ -212,11 +244,11 @@ function marketRow(symbol) {
 function renderAccount() {
   const loggedIn = Boolean(state.token);
   $("accountEmail").textContent = loggedIn ? state.email : "Not signed in";
-  $("accountStatus").textContent = loggedIn ? "Session active with the local Sentience backend." : "Connect to the backend to manage your brokerage account.";
+  $("accountStatus").textContent = loggedIn ? "Session active with the public Sentience backend." : "Connect to the backend to manage your brokerage account.";
   $("accountAuthButton").textContent = loggedIn ? "Manage session" : "Log in / Sign up";
-  $("bankRows").innerHTML = state.banks.length ? state.banks.map((b) => `<div class="row">
-    <div><strong>Routing •••• ${b.routing_last4}</strong><small>Account •••• ${b.account_last4}</small></div>
-    <div class="right"><small>Linked</small><strong>Bank</strong></div>
+  $("bankRows").innerHTML = state.banks.length ? state.banks.map((b) => `<div class="row bank-row">
+    <div><strong>Linked bank account</strong><small>Routing ending ${b.routing_last4}</small><small>Account ending ${b.account_last4}</small></div>
+    <div class="bank-pill">Linked</div>
   </div>`).join("") : `<div class="row"><div><strong>No bank accounts linked</strong><small>A bank is required for deposits and trades.</small></div></div>`;
   $("txnMeta").textContent = state.txns.length;
   $("transactionRows").innerHTML = state.txns.length ? state.txns.map((t) => `<div class="row">
@@ -224,6 +256,26 @@ function renderAccount() {
     <div class="hide-mobile"><small>${t.shares ? `${t.shares} shares` : ""}</small><strong>${t.price ? money(t.price) : ""}</strong></div>
     <div class="right"><strong class="${t.amount >= 0 ? "positive" : "negative"}">${money(t.amount)}</strong></div>
   </div>`).join("") : `<div class="row"><div><strong>No transactions yet</strong><small>Activity will appear here.</small></div></div>`;
+}
+
+function renderTradeSidebar() {
+  const holdings = state.account.holdings || [];
+  $("tradeCash").textContent = money(state.account.cash_balance);
+  $("tradePositionMeta").textContent = holdings.length ? `${holdings.length} active position${holdings.length === 1 ? "" : "s"}` : "No active positions";
+  $("tradeHoldingRows").innerHTML = holdings.length ? holdings.slice(0, 5).map((h) => {
+    const q = state.quotes[h.symbol] || {};
+    const price = q.c || h.avg_price;
+    return `<button class="mini-row market-row" data-symbol="${h.symbol}">
+      <div><strong>${h.symbol}</strong><small>${h.shares} shares</small></div>
+      <div class="right"><strong>${money(price * h.shares)}</strong><small>${money(price)}</small></div>
+    </button>`;
+  }).join("") : `<div class="mini-row"><div><strong>No positions yet</strong><small>Buy a stock to start here.</small></div></div>`;
+
+  const trades = state.txns.filter((t) => ["buy", "sell"].includes(String(t.type).toLowerCase())).slice(0, 4);
+  $("tradeActivityRows").innerHTML = trades.length ? trades.map((t) => `<div class="mini-row">
+    <div><strong>${String(t.type).toUpperCase()} ${t.symbol || ""}</strong><small>${new Date(t.created_at).toLocaleDateString()}</small></div>
+    <div class="right"><strong>${t.shares || ""}</strong><small>${t.price ? money(t.price) : ""}</small></div>
+  </div>`).join("") : `<div class="mini-row"><div><strong>No trades yet</strong><small>Completed orders will appear here.</small></div></div>`;
 }
 
 async function renderChart() {
@@ -311,22 +363,31 @@ function logout(showToast = true) {
   renderChart();
 }
 
+async function placeTrade(side, symbol, shares) {
+  const cleanSymbol = String(symbol || "").trim().toUpperCase();
+  if (!state.token) return toast("Log in first.");
+  if (!cleanSymbol) return toast("Choose a ticker first.");
+  if (!shares || shares <= 0) return toast("Enter a share quantity.");
+  try {
+    const quote = await fetchQuote(cleanSymbol);
+    await api(`/trade/${side}`, {
+      method: "POST",
+      body: JSON.stringify({ symbol: cleanSymbol, shares, price: quote.c })
+    });
+    toast(`${side === "buy" ? "Bought" : "Sold"} ${shares} ${cleanSymbol}.`);
+    await refreshBackend();
+    await refreshMarkets();
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
 async function trade(event, side) {
   event.preventDefault();
   const symbol = $("tradeActionSymbol").value;
   const shares = Number($("tradeShares").value);
-  const quote = await fetchQuote(symbol);
-  if (!shares || shares <= 0) return toast("Enter a share quantity.");
-  try {
-    await api(`/trade/${side}`, {
-      method: "POST",
-      body: JSON.stringify({ symbol, shares, price: quote.c })
-    });
-    toast(`${side === "buy" ? "Bought" : "Sold"} ${shares} ${symbol}.`);
-    await refreshBackend();
-  } catch (error) {
-    toast(error.message);
-  }
+  await placeTrade(side, symbol, shares);
+  $("tradeShares").value = "";
 }
 
 function wireEvents() {
@@ -361,8 +422,15 @@ function wireEvents() {
     await refreshMarkets();
   });
   document.body.addEventListener("click", async (event) => {
+    const portfolioTrade = event.target.closest("[data-portfolio-side]");
     const holding = event.target.closest(".holding-row");
     const market = event.target.closest(".market-row");
+    if (portfolioTrade) {
+      event.preventDefault();
+      await placeTrade(portfolioTrade.dataset.portfolioSide, $("portfolioActionSymbol").value, Number($("portfolioShares").value));
+      $("portfolioShares").value = "";
+      return;
+    }
     if (holding) {
       state.selectedSymbol = holding.dataset.symbol;
       renderPortfolio();
