@@ -7,7 +7,7 @@
 
 import Foundation
 
-private let finnhubAPIKey = Secrets.finnhubAPIKey
+private let marketDataBase = "https://sentience-brokerageapp-production.up.railway.app"
 
 struct CandleData: Codable {
     let c: [Double]?
@@ -20,14 +20,14 @@ final class APIClient {
     private init() {}
 
     func fetchQuote(symbol: String) async throws -> Quote {
-        try await get("https://finnhub.io/api/v1/quote?symbol=\(pct(symbol))&token=\(finnhubAPIKey)")
+        try await get("\(marketDataBase)/market/quote?symbol=\(pct(symbol))")
     }
 
     func fetchCandles(symbol: String, resolution: String, from: Int, to: Int) async throws -> [Double] {
-        let url = "https://finnhub.io/api/v1/stock/candle?symbol=\(pct(symbol))&resolution=\(resolution)&from=\(from)&to=\(to)&token=\(finnhubAPIKey)"
+        let url = "\(marketDataBase)/market/candles?symbol=\(pct(symbol))&resolution=\(resolution)&from_time=\(from)&to=\(to)"
         let candle: CandleData = try await get(url)
         guard candle.s == "ok", let closes = candle.c, !closes.isEmpty else {
-            throw FinnhubErrorResponse(error: "No candle data for \(symbol)")
+            throw FinnhubErrorResponse(error: "No chart data for \(symbol)")
         }
         return closes
     }
