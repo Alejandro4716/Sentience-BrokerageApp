@@ -12,10 +12,11 @@ This backend is ready for Railway or another Docker-based host.
 4. Set these variables on the backend service:
 
 ```txt
-DATABASE_URL=${{Postgres.DATABASE_URL}}
+DATABASE_URL=<Postgres DATABASE_PUBLIC_URL or private DATABASE_URL>
 FINNHUB_API_KEY=your_finnhub_key
 JWT_SECRET=generate_a_long_random_secret
 FRONTEND_ORIGINS=https://alejandro4716.github.io
+PORT=8000
 ```
 
 5. Generate a public Railway domain for the backend service.
