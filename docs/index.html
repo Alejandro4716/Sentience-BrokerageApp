@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sentience Brokerage</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="rail" aria-label="Primary">
+        <div class="brand">
+          <span class="brand-mark">S</span>
+          <span>SENTIENCE</span>
+        </div>
+        <nav class="nav-tabs" id="navTabs">
+          <button class="nav-tab active" data-view="portfolio" title="Portfolio">▥ <span>Portfolio</span></button>
+          <button class="nav-tab" data-view="markets" title="Markets">⌁ <span>Markets</span></button>
+          <button class="nav-tab" data-view="trade" title="Trade">＋ <span>Trade</span></button>
+          <button class="nav-tab" data-view="account" title="Account">◉ <span>Account</span></button>
+        </nav>
+        <div class="session-pill" id="sessionPill">
+          <span class="dot off"></span>
+          <span>Logged out</span>
+        </div>
+      </aside>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="viewEyebrow">PORTFOLIO</p>
+            <h1 id="viewTitle">Sentience</h1>
+          </div>
+          <div class="topbar-actions">
+            <div class="market-state" id="marketState"><span class="dot"></span><span>NYSE</span></div>
+            <button class="icon-button" id="refreshButton" title="Refresh">↻</button>
+            <button class="avatar" id="authButton" title="Account">AM</button>
+          </div>
+        </header>
+
+        <section class="view active" id="portfolioView">
+          <div class="portfolio-grid">
+            <section class="feature-panel">
+              <div class="feature-head">
+                <div>
+                  <p class="muted" id="featuredName">No position selected</p>
+                  <div class="quote-line">
+                    <strong id="featuredPrice">$0.00</strong>
+                    <span class="change-badge up" id="featuredChange">+0.00%</span>
+                  </div>
+                </div>
+                <select id="featuredSelect" class="select"></select>
+              </div>
+              <canvas id="chartCanvas" height="190" aria-label="Price chart"></canvas>
+              <div class="periods" id="periodButtons">
+                <button class="active" data-period="1D">1D</button>
+                <button data-period="1W">1W</button>
+                <button data-period="1M">1M</button>
+                <button data-period="3M">3M</button>
+                <button data-period="1Y">1Y</button>
+                <button data-period="ALL">ALL</button>
+              </div>
+            </section>
+
+            <section class="metrics">
+              <article class="metric"><span>PORTFOLIO</span><strong id="portfolioValue">$0.00</strong></article>
+              <article class="metric"><span>CASH</span><strong id="cashBalance">$0.00</strong></article>
+              <article class="metric"><span>DAY P&amp;L</span><strong id="dayPnl">$0.00</strong></article>
+              <article class="metric"><span>POSITIONS</span><strong id="positionCount">0</strong></article>
+            </section>
+          </div>
+
+          <section class="table-panel">
+            <div class="section-head">
+              <p>HOLDINGS</p>
+              <span id="holdingsMeta">0 positions</span>
+            </div>
+            <div class="rows" id="holdingsRows"></div>
+          </section>
+        </section>
+
+        <section class="view" id="marketsView">
+          <div class="market-layout">
+            <section class="table-panel">
+              <div class="section-head">
+                <p>INDICES</p>
+                <button class="ghost-button" id="refreshMarkets">Refresh</button>
+              </div>
+              <div class="rows" id="indexRows"></div>
+            </section>
+            <section class="table-panel">
+              <div class="section-head">
+                <p>WATCHLIST</p>
+                <form class="inline-form" id="watchlistForm">
+                  <input id="watchlistInput" placeholder="Ticker" />
+                  <button type="submit">＋</button>
+                </form>
+              </div>
+              <div class="rows" id="watchlistRows"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="tradeView">
+          <section class="trade-panel">
+            <form class="search-strip" id="tradeSearch">
+              <span>⌕</span>
+              <input id="tradeSymbol" placeholder="Enter ticker, e.g. AAPL" autocomplete="off" />
+              <button type="submit">GO</button>
+            </form>
+            <div class="trade-card" id="tradeCard">
+              <p class="muted">Search a ticker to view price and trade.</p>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="accountView">
+          <div class="account-grid">
+            <section class="account-summary">
+              <div class="big-avatar" id="accountAvatar">AM</div>
+              <h2 id="accountEmail">Not signed in</h2>
+              <p id="accountStatus">Connect to the backend to manage your brokerage account.</p>
+              <button class="primary-button" id="accountAuthButton">Log in / Sign up</button>
+            </section>
+            <section class="table-panel">
+              <div class="section-head">
+                <p>LINKED BANK ACCOUNTS</p>
+                <button class="ghost-button" id="bankToggle">Add</button>
+              </div>
+              <form class="bank-form hidden" id="bankForm">
+                <input id="routingInput" placeholder="Routing number" />
+                <input id="accountInput" placeholder="Account number" />
+                <button type="submit">Link bank</button>
+              </form>
+              <div class="rows" id="bankRows"></div>
+            </section>
+          </div>
+
+          <div class="money-actions">
+            <form id="depositForm">
+              <label>Deposit</label>
+              <input id="depositAmount" type="number" min="0" step="0.01" placeholder="Amount" />
+              <button type="submit">Deposit</button>
+            </form>
+            <form id="withdrawForm">
+              <label>Withdraw</label>
+              <input id="withdrawAmount" type="number" min="0" step="0.01" placeholder="Amount" />
+              <button type="submit">Withdraw</button>
+            </form>
+          </div>
+
+          <section class="table-panel">
+            <div class="section-head"><p>TRANSACTIONS</p><span id="txnMeta">0</span></div>
+            <div class="rows" id="transactionRows"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <dialog class="auth-dialog" id="authDialog">
+      <form method="dialog" class="dialog-close"><button title="Close">×</button></form>
+      <form class="auth-form" id="authForm">
+        <div>
+          <p class="eyebrow">BACKEND SESSION</p>
+          <h2 id="authHeading">Log in</h2>
+        </div>
+        <input id="emailInput" type="email" placeholder="Email" required />
+        <input id="passwordInput" type="password" placeholder="Password" required />
+        <button class="primary-button" type="submit" id="authSubmit">Log in</button>
+        <button class="text-button" type="button" id="modeToggle">Need an account? Sign up</button>
+        <button class="danger-button hidden" type="button" id="logoutButton">Sign out</button>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>

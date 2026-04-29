@@ -1,6 +1,12 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import urlopen
+import json
+import os
 
 from .database import Base, engine, get_db
 from .models import User, Account, Holding, BankAccount, Transaction
@@ -14,6 +20,40 @@ from decimal import Decimal
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Sentience Backend")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://127.0.0.1:5173",
+        "http://localhost:5173",
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "http://127.0.0.1:8001",
+        "http://localhost:8001",
+        "https://alejandro4716.github.io",
+        "https://alejandro4716.github.io/Sentience-BrokerageApp",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+FINNHUB_API_KEY = os.environ.get("FINNHUB_API_KEY", "")
+
+def finnhub_get(path: str, params: dict):
+    if not FINNHUB_API_KEY:
+        raise HTTPException(status_code=503, detail="FINNHUB_API_KEY is not configured")
+
+    query = urlencode({**params, "token": FINNHUB_API_KEY})
+    url = f"https://finnhub.io/api/v1/{path}?{query}"
+    try:
+        with urlopen(url, timeout=10) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8") or "Finnhub request failed"
+        raise HTTPException(status_code=exc.code, detail=detail)
+    except URLError as exc:
+        raise HTTPException(status_code=502, detail=str(exc.reason))
 
 # ===== AUTH MIDDLEWARE =====
 bearer = HTTPBearer()
@@ -67,6 +107,29 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer)
 @app.get("/")
 def root():
     return {"message": "Backend is running!"}
+
+
+@app.get("/market/quote")
+def market_quote(symbol: str = Query(..., min_length=1)):
+    return finnhub_get("quote", {"symbol": symbol.upper()})
+
+
+@app.get("/market/candles")
+def market_candles(
+    symbol: str = Query(..., min_length=1),
+    resolution: str = Query(..., min_length=1),
+    from_time: int = Query(...),
+    to: int = Query(...),
+):
+    return finnhub_get(
+        "stock/candle",
+        {
+            "symbol": symbol.upper(),
+            "resolution": resolution,
+            "from": from_time,
+            "to": to,
+        },
+    )
 
 # SIGNUP
 @app.post("/auth/signup", response_model=AuthResponse)
