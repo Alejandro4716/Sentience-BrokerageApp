@@ -247,7 +247,7 @@ function renderAccount() {
   $("accountStatus").textContent = loggedIn ? "Session active with the public Sentience backend." : "Connect to the backend to manage your brokerage account.";
   $("accountAuthButton").textContent = loggedIn ? "Manage session" : "Log in / Sign up";
   $("bankRows").innerHTML = state.banks.length ? state.banks.map((b) => `<div class="row bank-row">
-    <div><strong>Linked bank account</strong><small>Routing ending ${b.routing_last4}</small><small>Account ending ${b.account_last4}</small></div>
+    <div><strong>Account: X${b.account_last4}</strong></div>
     <div class="bank-pill">Linked</div>
   </div>`).join("") : `<div class="row"><div><strong>No bank accounts linked</strong><small>A bank is required for deposits and trades.</small></div></div>`;
   $("txnMeta").textContent = state.txns.length;
