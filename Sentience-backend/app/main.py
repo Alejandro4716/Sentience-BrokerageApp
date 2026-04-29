@@ -4,7 +4,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 import json
 import os
 
@@ -58,6 +58,68 @@ def finnhub_get(path: str, params: dict):
         raise HTTPException(status_code=exc.code, detail=detail)
     except URLError as exc:
         raise HTTPException(status_code=502, detail=str(exc.reason))
+
+def yahoo_range_and_interval(resolution: str, from_time: int, to: int):
+    days = max(1, int((to - from_time) / 86400))
+    if resolution in {"1", "5", "15", "30", "60"} and days <= 7:
+        return "5d", f"{resolution}m"
+    if days <= 7:
+        return "5d", "1d"
+    if days <= 35:
+        return "1mo", "1d"
+    if days <= 100:
+        return "3mo", "1d"
+    if days <= 370:
+        return "1y", "1wk"
+    return "5y", "1mo"
+
+def yahoo_candles(symbol: str, resolution: str, from_time: int, to: int):
+    chart_range, interval = yahoo_range_and_interval(resolution, from_time, to)
+    query = urlencode({"range": chart_range, "interval": interval})
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol.upper()}?{query}"
+    request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    try:
+        with urlopen(request, timeout=10) as response:
+            data = json.loads(response.read().decode("utf-8"))
+    except HTTPError as exc:
+        detail = exc.read().decode("utf-8") or "Yahoo chart request failed"
+        raise HTTPException(status_code=exc.code, detail=detail)
+    except URLError as exc:
+        raise HTTPException(status_code=502, detail=str(exc.reason))
+
+    result = (data.get("chart", {}).get("result") or [None])[0]
+    if not result:
+        raise HTTPException(status_code=404, detail="No chart data available")
+
+    timestamps = result.get("timestamp") or []
+    quote = ((result.get("indicators") or {}).get("quote") or [{}])[0]
+    closes = quote.get("close") or []
+    opens = quote.get("open") or []
+    highs = quote.get("high") or []
+    lows = quote.get("low") or []
+    volumes = quote.get("volume") or []
+
+    rows = [
+        (t, opens[i], highs[i], lows[i], closes[i], volumes[i] if i < len(volumes) else 0)
+        for i, t in enumerate(timestamps)
+        if i < len(closes) and closes[i] is not None and from_time <= t <= to
+    ]
+    if len(rows) < 2:
+        rows = [
+            (t, opens[i], highs[i], lows[i], closes[i], volumes[i] if i < len(volumes) else 0)
+            for i, t in enumerate(timestamps)
+            if i < len(closes) and closes[i] is not None
+        ]
+
+    return {
+        "s": "ok" if rows else "no_data",
+        "t": [row[0] for row in rows],
+        "o": [row[1] for row in rows],
+        "h": [row[2] for row in rows],
+        "l": [row[3] for row in rows],
+        "c": [row[4] for row in rows],
+        "v": [row[5] for row in rows],
+    }
 
 # ===== AUTH MIDDLEWARE =====
 bearer = HTTPBearer()
@@ -125,15 +187,20 @@ def market_candles(
     from_time: int = Query(...),
     to: int = Query(...),
 ):
-    return finnhub_get(
-        "stock/candle",
-        {
-            "symbol": symbol.upper(),
-            "resolution": resolution,
-            "from": from_time,
-            "to": to,
-        },
-    )
+    try:
+        return finnhub_get(
+            "stock/candle",
+            {
+                "symbol": symbol.upper(),
+                "resolution": resolution,
+                "from": from_time,
+                "to": to,
+            },
+        )
+    except HTTPException as exc:
+        if exc.status_code not in {401, 403, 429}:
+            raise
+        return yahoo_candles(symbol, resolution, from_time, to)
 
 # SIGNUP
 @app.post("/auth/signup", response_model=AuthResponse)
