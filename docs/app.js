@@ -1,4 +1,4 @@
-const BACKEND_BASE = "http://127.0.0.1:8000";
+const BACKEND_BASE = "https://sentience-brokerageapp-production.up.railway.app";
 
 const COMPANY_NAMES = {
   AAPL: "Apple Inc.", TSLA: "Tesla Inc.", NVDA: "Nvidia Corp.", MSFT: "Microsoft Corp.",
