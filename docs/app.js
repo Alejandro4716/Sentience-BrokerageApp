@@ -438,30 +438,95 @@ function drawAllocationChart(ctx, width, height) {
     const price = state.quotes[holding.symbol]?.c || holding.avg_price;
     entries.push({ label: holding.symbol, value: price * holding.shares });
   });
+  entries.sort((a, b) => b.value - a.value);
   const total = entries.reduce((sum, entry) => sum + entry.value, 0);
   if (!total) return drawEmptyChart(ctx, width, height, "No assets to allocate");
 
   const centerX = width / 2;
   const centerY = height / 2;
-  const radius = Math.min(width, height) * 0.35;
+  const showCallouts = width >= 320;
+  const radius = Math.min(height * 0.31, width * (width >= 560 ? 0.13 : 0.15));
+  const slices = [];
   let angle = -Math.PI / 2;
   entries.forEach((entry, index) => {
     const slice = (entry.value / total) * Math.PI * 2;
+    const color = palette[index % palette.length];
+    const midAngle = angle + (slice / 2);
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, angle, angle + slice);
-    ctx.strokeStyle = palette[index % palette.length];
-    ctx.lineWidth = Math.max(22, radius * 0.34);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = Math.max(20, radius * 0.38);
     ctx.stroke();
+    slices.push({
+      ...entry,
+      color,
+      midAngle,
+      percent: (entry.value / total) * 100
+    });
     angle += slice;
   });
   ctx.fillStyle = "#f5f5f0";
   ctx.font = "700 16px system-ui";
   ctx.textAlign = "center";
   ctx.fillText(money(total), centerX, centerY + 5);
-  setChartLegend(entries.map((entry, index) => ({
-    label: `${entry.label} ${Math.round((entry.value / total) * 100)}%`,
-    color: palette[index % palette.length]
+  const labelSlices = width < 560 ? slices.slice(0, 4) : slices;
+  drawAllocationLabels(ctx, width, height, centerX, centerY, radius, labelSlices, showCallouts);
+  setChartLegend(slices.map((entry) => ({
+    label: `${entry.label} ${Math.round(entry.percent)}%`,
+    color: entry.color
   })));
+}
+
+function drawAllocationLabels(ctx, width, height, centerX, centerY, radius, slices, showCallouts) {
+  ctx.font = "700 11px system-ui";
+  ctx.lineWidth = 1;
+
+  if (!showCallouts) {
+    slices.filter((slice) => slice.percent >= 12).forEach((slice) => {
+      const labelRadius = radius;
+      const x = centerX + (Math.cos(slice.midAngle) * labelRadius);
+      const y = centerY + (Math.sin(slice.midAngle) * labelRadius);
+      ctx.fillStyle = "#111";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`${slice.label} ${Math.round(slice.percent)}%`, x, y);
+    });
+    return;
+  }
+
+  const sides = {
+    left: slices.filter((slice) => Math.cos(slice.midAngle) < 0),
+    right: slices.filter((slice) => Math.cos(slice.midAngle) >= 0)
+  };
+  Object.entries(sides).forEach(([side, sideSlices]) => {
+    const isRight = side === "right";
+    const top = 12;
+    const bottom = height - 12;
+    const gap = sideSlices.length > 1 ? Math.min(18, (bottom - top) / (sideSlices.length - 1)) : 0;
+    sideSlices.sort((a, b) => Math.sin(a.midAngle) - Math.sin(b.midAngle));
+    sideSlices.forEach((slice, index) => {
+      const naturalY = centerY + (Math.sin(slice.midAngle) * radius * 1.35);
+      const distributedY = sideSlices.length > 1
+        ? centerY - ((sideSlices.length - 1) * gap / 2) + (index * gap)
+        : naturalY;
+      const labelY = Math.max(top, Math.min(bottom, distributedY));
+      const startX = centerX + (Math.cos(slice.midAngle) * radius * 1.2);
+      const startY = centerY + (Math.sin(slice.midAngle) * radius * 1.2);
+      const elbowX = centerX + (isRight ? radius * 1.55 : -radius * 1.55);
+      const labelX = isRight ? Math.min(width - 70, centerX + radius * 1.9) : Math.max(70, centerX - radius * 1.9);
+
+      ctx.strokeStyle = slice.color;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(elbowX, labelY);
+      ctx.lineTo(labelX + (isRight ? -4 : 4), labelY);
+      ctx.stroke();
+      ctx.fillStyle = "#d6d6d1";
+      ctx.textAlign = isRight ? "left" : "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`${slice.label} ${Math.round(slice.percent)}%`, labelX, labelY);
+    });
+  });
 }
 
 function drawPnlChart(ctx, width, height) {
