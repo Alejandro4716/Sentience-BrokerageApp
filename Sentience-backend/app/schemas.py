@@ -63,3 +63,15 @@ class TransactionResponse(BaseModel):
     price: float | None = None
     amount: float
     created_at: datetime
+
+
+class PortfolioSnapshotRequest(BaseModel):
+    holdings_value: float
+
+
+class PortfolioSnapshotResponse(BaseModel):
+    id: UUID
+    cash_balance: float
+    holdings_value: float
+    total_value: float
+    created_at: datetime

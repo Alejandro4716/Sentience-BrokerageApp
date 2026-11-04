@@ -24,6 +24,8 @@ def get_database_url() -> str:
         return raw.replace("postgresql://", "postgresql+psycopg2://", 1)
     if raw.startswith("postgresql+psycopg2://"):
         return raw
+    if raw.startswith("sqlite://"):
+        return raw
     return railway_database_url() or "postgresql+psycopg2://postgres:postgres@db:5432/sentience"
 
 DATABASE_URL = get_database_url()

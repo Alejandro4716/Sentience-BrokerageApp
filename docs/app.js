@@ -18,9 +18,11 @@ const state = {
   txns: [],
   quotes: {},
   indexQuotes: {},
+  portfolioHistory: [],
   watchlist: JSON.parse(localStorage.getItem("sentience.watchlist") || '["AAPL","NVDA","TSLA"]'),
   selectedSymbol: "",
   selectedPeriod: "1M",
+  chartMode: "performance",
   authMode: "login",
   hasEntered: false,
   activeView: "portfolio"
@@ -118,6 +120,7 @@ async function refreshBackend() {
     state.account = { cash_balance: 0, holdings: [] };
     state.banks = [];
     state.txns = [];
+    state.portfolioHistory = [];
     render();
     return;
   }
@@ -131,7 +134,11 @@ async function refreshBackend() {
     state.banks = banks;
     state.txns = txns;
     await refreshHoldingQuotes();
-    if (!state.selectedSymbol && account.holdings[0]) state.selectedSymbol = account.holdings[0].symbol;
+    const recentBuy = txns.find((txn) => String(txn.type).toUpperCase() === "BUY" && account.holdings.some((holding) => holding.symbol === txn.symbol));
+    if (!state.selectedSymbol || !account.holdings.some((holding) => holding.symbol === state.selectedSymbol)) {
+      state.selectedSymbol = recentBuy?.symbol || account.holdings[0]?.symbol || "";
+    }
+    await syncPortfolioHistory();
     render();
     await renderChart();
   } catch (error) {
@@ -144,6 +151,24 @@ async function refreshBackend() {
 async function refreshHoldingQuotes() {
   const symbols = state.account.holdings.map((h) => h.symbol);
   await Promise.all(symbols.map((symbol) => fetchQuote(symbol).catch(() => null)));
+}
+
+async function syncPortfolioHistory() {
+  const holdingsValue = (state.account.holdings || []).reduce((sum, holding) => {
+    const price = state.quotes[holding.symbol]?.c || holding.avg_price;
+    return sum + (price * holding.shares);
+  }, 0);
+  try {
+    await api("/portfolio/snapshots", {
+      method: "POST",
+      body: JSON.stringify({ holdings_value: holdingsValue })
+    });
+  } catch {}
+  try {
+    state.portfolioHistory = await api("/portfolio/history");
+  } catch {
+    state.portfolioHistory = [];
+  }
 }
 
 async function refreshMarkets() {
@@ -207,17 +232,64 @@ function renderPortfolio() {
     ? holdings.map((h) => `<option value="${h.symbol}" ${h.symbol === state.selectedSymbol ? "selected" : ""}>${h.symbol}</option>`).join("")
     : `<option>No holdings</option>`;
   select.disabled = !holdings.length;
+  select.classList.toggle("hidden", state.chartMode !== "holding");
 
   const selected = state.selectedSymbol || holdings[0]?.symbol || "";
   const q = state.quotes[selected];
-  $("featuredName").textContent = selected ? companyName(selected) : "No position selected";
-  $("featuredPrice").textContent = selected ? money(q?.c || holdings.find((h) => h.symbol === selected)?.avg_price || 0) : "$0.00";
-  $("featuredChange").textContent = pct(q?.dp || 0);
-  $("featuredChange").className = `change-badge ${(q?.dp || 0) >= 0 ? "up" : "down"}`;
+  renderChartHeader(holdings, liveValue, total, selected, q);
+  document.querySelectorAll("#chartModeButtons button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.chartMode === state.chartMode);
+  });
+  $("periodButtons").classList.toggle("hidden", !["performance", "holding"].includes(state.chartMode));
 
   $("holdingsRows").innerHTML = holdings.length ? holdings.map((h) => holdingRow(h, liveValue)).join("") :
     `<div class="row"><div><strong>No holdings yet</strong><small>Use Trade to buy your first stock.</small></div></div>`;
   renderPortfolioTradePanel(selected, holdings, q);
+}
+
+function renderChartHeader(holdings, liveValue, total, selected, quote) {
+  const badge = $("featuredChange");
+  if (state.chartMode === "allocation") {
+    $("featuredName").textContent = "Portfolio allocation";
+    $("featuredPrice").textContent = money(total);
+    badge.textContent = `${holdings.length + (state.account.cash_balance > 0 ? 1 : 0)} assets`;
+    badge.className = "change-badge neutral";
+    return;
+  }
+
+  if (state.chartMode === "pnl") {
+    const cost = holdings.reduce((sum, holding) => sum + (holding.avg_price * holding.shares), 0);
+    const unrealized = liveValue - cost;
+    $("featuredName").textContent = "Unrealized P&L";
+    $("featuredPrice").textContent = money(unrealized);
+    badge.textContent = pct(cost ? (unrealized / cost) * 100 : 0);
+    badge.className = `change-badge ${unrealized >= 0 ? "up" : "down"}`;
+    return;
+  }
+
+  if (state.chartMode === "performance") {
+    const history = filteredPortfolioHistory();
+    const first = history[0]?.total_value ?? total;
+    const change = total - first;
+    $("featuredName").textContent = "Portfolio value";
+    $("featuredPrice").textContent = money(total);
+    badge.textContent = pct(first ? (change / first) * 100 : 0);
+    badge.className = `change-badge ${change >= 0 ? "up" : "down"}`;
+    return;
+  }
+
+  const holding = holdings.find((item) => item.symbol === selected);
+  $("featuredName").textContent = selected ? companyName(selected) : "No position selected";
+  $("featuredPrice").textContent = selected ? money(quote?.c || holding?.avg_price || 0) : "$0.00";
+  badge.textContent = pct(quote?.dp || 0);
+  badge.className = `change-badge ${(quote?.dp || 0) >= 0 ? "up" : "down"}`;
+}
+
+function filteredPortfolioHistory() {
+  if (state.selectedPeriod === "ALL") return state.portfolioHistory;
+  const days = { "1D": 1, "1W": 7, "1M": 30, "3M": 90, "1Y": 365 }[state.selectedPeriod] || 30;
+  const cutoff = Date.now() - (days * 86400000);
+  return state.portfolioHistory.filter((point) => new Date(point.created_at).getTime() >= cutoff);
 }
 
 function holdingRow(h, liveValue) {
@@ -328,10 +400,98 @@ async function renderChart() {
   canvas.height = Math.floor(rect.height * ratio);
   ctx.scale(ratio, ratio);
   ctx.clearRect(0, 0, rect.width, rect.height);
-  if (!symbol) return drawEmptyChart(ctx, rect.width, rect.height, "No chart data");
+  canvas.setAttribute("aria-label", `${state.chartMode} chart`);
+  setChartLegend([]);
+
+  if (state.chartMode === "allocation") {
+    return drawAllocationChart(ctx, rect.width, rect.height);
+  }
+  if (state.chartMode === "pnl") {
+    return drawPnlChart(ctx, rect.width, rect.height);
+  }
+  if (state.chartMode === "performance") {
+    const history = filteredPortfolioHistory();
+    if (!history.length) return drawEmptyChart(ctx, rect.width, rect.height, "Portfolio history starts after this refresh");
+    const values = history.map((point) => point.total_value);
+    drawChart(ctx, rect.width, rect.height, values.length === 1 ? [values[0], values[0]] : values);
+    if (history.length === 1) setChartLegend([{ label: "History begins with today's snapshot", color: "#b6e852" }]);
+    return;
+  }
+
+  if (!symbol) return drawEmptyChart(ctx, rect.width, rect.height, "No holding selected");
   const prices = await fetchCandles(symbol, state.selectedPeriod).catch(() => []);
   if (prices.length < 2) return drawEmptyChart(ctx, rect.width, rect.height, "No chart data");
   drawChart(ctx, rect.width, rect.height, prices);
+}
+
+function setChartLegend(items) {
+  const legend = $("chartLegend");
+  legend.classList.toggle("hidden", !items.length);
+  legend.innerHTML = items.map((item) => `<span><i style="background:${item.color}"></i>${item.label}</span>`).join("");
+}
+
+function drawAllocationChart(ctx, width, height) {
+  const palette = ["#b6e852", "#72a8ff", "#e8b852", "#bc78ff", "#53d6c7", "#ff7f6e", "#9ea7b3", "#e278bb"];
+  const entries = [];
+  if (state.account.cash_balance > 0) entries.push({ label: "Cash", value: state.account.cash_balance });
+  (state.account.holdings || []).forEach((holding) => {
+    const price = state.quotes[holding.symbol]?.c || holding.avg_price;
+    entries.push({ label: holding.symbol, value: price * holding.shares });
+  });
+  const total = entries.reduce((sum, entry) => sum + entry.value, 0);
+  if (!total) return drawEmptyChart(ctx, width, height, "No assets to allocate");
+
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(width, height) * 0.35;
+  let angle = -Math.PI / 2;
+  entries.forEach((entry, index) => {
+    const slice = (entry.value / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, angle, angle + slice);
+    ctx.strokeStyle = palette[index % palette.length];
+    ctx.lineWidth = Math.max(22, radius * 0.34);
+    ctx.stroke();
+    angle += slice;
+  });
+  ctx.fillStyle = "#f5f5f0";
+  ctx.font = "700 16px system-ui";
+  ctx.textAlign = "center";
+  ctx.fillText(money(total), centerX, centerY + 5);
+  setChartLegend(entries.map((entry, index) => ({
+    label: `${entry.label} ${Math.round((entry.value / total) * 100)}%`,
+    color: palette[index % palette.length]
+  })));
+}
+
+function drawPnlChart(ctx, width, height) {
+  const entries = (state.account.holdings || []).map((holding) => {
+    const price = state.quotes[holding.symbol]?.c || holding.avg_price;
+    return { label: holding.symbol, value: (price - holding.avg_price) * holding.shares };
+  }).sort((a, b) => Math.abs(b.value) - Math.abs(a.value)).slice(0, 6);
+  if (!entries.length) return drawEmptyChart(ctx, width, height, "No holdings for P&L");
+
+  const max = Math.max(...entries.map((entry) => Math.abs(entry.value)), 1);
+  const labelWidth = 46;
+  const valueWidth = 74;
+  const barWidth = Math.max(20, width - labelWidth - valueWidth - 26);
+  const rowHeight = height / entries.length;
+  entries.forEach((entry, index) => {
+    const y = (index * rowHeight) + (rowHeight / 2);
+    const amountWidth = (Math.abs(entry.value) / max) * barWidth;
+    ctx.fillStyle = "#999";
+    ctx.font = "700 11px system-ui";
+    ctx.textAlign = "left";
+    ctx.fillText(entry.label, 14, y + 4);
+    ctx.fillStyle = entry.value >= 0 ? "#b6e852" : "#ff5d5d";
+    ctx.fillRect(labelWidth, y - 7, amountWidth, 14);
+    ctx.textAlign = "right";
+    ctx.fillText(money(entry.value), width - 12, y + 4);
+  });
+  setChartLegend([
+    { label: "Gain", color: "#b6e852" },
+    { label: "Loss", color: "#ff5d5d" }
+  ]);
 }
 
 function drawEmptyChart(ctx, width, height, label) {
@@ -409,6 +569,7 @@ function logout(showToast = true) {
   state.account = { cash_balance: 0, holdings: [] };
   state.banks = [];
   state.txns = [];
+  state.portfolioHistory = [];
   localStorage.removeItem("sentience.token");
   localStorage.removeItem("sentience.email");
   localStorage.removeItem("sentience.firstName");
@@ -495,6 +656,7 @@ function wireEvents() {
     }
     if (holding) {
       state.selectedSymbol = holding.dataset.symbol;
+      state.chartMode = "holding";
       renderPortfolio();
       await renderChart();
     }
@@ -507,6 +669,13 @@ function wireEvents() {
   });
   $("featuredSelect").addEventListener("change", async (event) => {
     state.selectedSymbol = event.target.value;
+    renderPortfolio();
+    await renderChart();
+  });
+  $("chartModeButtons").addEventListener("click", async (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+    state.chartMode = button.dataset.chartMode;
     renderPortfolio();
     await renderChart();
   });

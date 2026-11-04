@@ -32,6 +32,7 @@ class Account(Base):
     holdings = relationship("Holding", back_populates="account", cascade="all, delete-orphan")
 
     transactions = relationship("Transaction", cascade="all, delete-orphan")
+    portfolio_snapshots = relationship("PortfolioSnapshot", cascade="all, delete-orphan")
 
 
 
@@ -73,3 +74,14 @@ class Transaction(Base):
     amount = Column(Float, nullable=False)  # total +/- amount of the txn
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class PortfolioSnapshot(Base):
+    __tablename__ = "portfolio_snapshots"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False, index=True)
+    cash_balance = Column(Float, nullable=False, default=0.0)
+    holdings_value = Column(Float, nullable=False, default=0.0)
+    total_value = Column(Float, nullable=False, default=0.0)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)

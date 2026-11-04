@@ -6,12 +6,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
+from datetime import datetime, timedelta, timezone
 import json
 import os
 
 from .database import Base, engine, get_db
-from .models import User, Account, Holding, BankAccount, Transaction
-from .schemas import SignupRequest, LoginRequest, AuthResponse, AccountResponse, DepositRequest, HoldingResponse, TradeRequest, BankAccountCreate, BankAccountResponse, TransactionResponse
+from .models import User, Account, Holding, BankAccount, Transaction, PortfolioSnapshot
+from .schemas import SignupRequest, LoginRequest, AuthResponse, AccountResponse, DepositRequest, HoldingResponse, TradeRequest, BankAccountCreate, BankAccountResponse, TransactionResponse, PortfolioSnapshotRequest, PortfolioSnapshotResponse
 from .auth import hash_password, verify_password, create_token, decode_token
 from uuid import UUID
 from decimal import Decimal
@@ -20,9 +21,10 @@ from decimal import Decimal
 # Create DB tables
 Base.metadata.create_all(bind=engine)
 
-with engine.begin() as connection:
-    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT NOT NULL DEFAULT ''"))
-    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT NOT NULL DEFAULT ''"))
+if engine.dialect.name == "postgresql":
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT NOT NULL DEFAULT ''"))
+        connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT NOT NULL DEFAULT ''"))
 
 app = FastAPI(title="Sentience Backend")
 
@@ -323,6 +325,87 @@ def get_account(
         db.refresh(acct)
 
     return build_account_response(acct, db)
+
+
+@app.post("/portfolio/snapshots", response_model=PortfolioSnapshotResponse)
+def record_portfolio_snapshot(
+    data: PortfolioSnapshotRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if data.holdings_value < 0:
+        raise HTTPException(status_code=400, detail="Holdings value cannot be negative")
+
+    acct = db.query(Account).filter(Account.user_id == user.id).first()
+    if not acct:
+        raise HTTPException(status_code=400, detail="No account found")
+
+    cash_balance = float(acct.cash_balance or 0.0)
+    holdings_value = float(data.holdings_value)
+    total_value = cash_balance + holdings_value
+    latest = (
+        db.query(PortfolioSnapshot)
+        .filter(PortfolioSnapshot.account_id == acct.id)
+        .order_by(PortfolioSnapshot.created_at.desc())
+        .first()
+    )
+
+    latest_at = latest.created_at if latest else None
+    if latest_at and latest_at.tzinfo is None:
+        latest_at = latest_at.replace(tzinfo=timezone.utc)
+
+    if latest and latest_at and datetime.now(timezone.utc) - latest_at <= timedelta(minutes=5):
+        latest.cash_balance = cash_balance
+        latest.holdings_value = holdings_value
+        latest.total_value = total_value
+        snapshot = latest
+    else:
+        snapshot = PortfolioSnapshot(
+            account_id=acct.id,
+            cash_balance=cash_balance,
+            holdings_value=holdings_value,
+            total_value=total_value,
+        )
+        db.add(snapshot)
+
+    db.commit()
+    db.refresh(snapshot)
+    return PortfolioSnapshotResponse(
+        id=snapshot.id,
+        cash_balance=float(snapshot.cash_balance),
+        holdings_value=float(snapshot.holdings_value),
+        total_value=float(snapshot.total_value),
+        created_at=snapshot.created_at,
+    )
+
+
+@app.get("/portfolio/history", response_model=list[PortfolioSnapshotResponse])
+def portfolio_history(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    acct = db.query(Account).filter(Account.user_id == user.id).first()
+    if not acct:
+        return []
+
+    snapshots = (
+        db.query(PortfolioSnapshot)
+        .filter(PortfolioSnapshot.account_id == acct.id)
+        .order_by(PortfolioSnapshot.created_at.desc())
+        .limit(1000)
+        .all()
+    )
+    snapshots.reverse()
+    return [
+        PortfolioSnapshotResponse(
+            id=snapshot.id,
+            cash_balance=float(snapshot.cash_balance),
+            holdings_value=float(snapshot.holdings_value),
+            total_value=float(snapshot.total_value),
+            created_at=snapshot.created_at,
+        )
+        for snapshot in snapshots
+    ]
 
 
 
