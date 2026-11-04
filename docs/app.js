@@ -187,7 +187,7 @@ function renderView() {
   document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === `${state.activeView}View`));
   const label = state.activeView.toUpperCase();
   $("viewEyebrow").textContent = label;
-  $("viewTitle").textContent = state.activeView === "portfolio" ? "Sentience" : label[0] + label.slice(1).toLowerCase();
+  $("viewTitle").textContent = state.activeView === "portfolio" ? (state.firstName || "Sentience") : label[0] + label.slice(1).toLowerCase();
 }
 
 function renderPortfolio() {
