@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Float, Integer, Text, ForeignKey, DateTime, func
+from sqlalchemy import Column, Float, Integer, Text, ForeignKey, Date, DateTime, Index, func
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -78,10 +78,15 @@ class Transaction(Base):
 
 class PortfolioSnapshot(Base):
     __tablename__ = "portfolio_snapshots"
+    __table_args__ = (
+        Index("uq_portfolio_snapshot_account_type_date", "account_id", "snapshot_type", "snapshot_date", unique=True),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     account_id = Column(UUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False, index=True)
     cash_balance = Column(Float, nullable=False, default=0.0)
     holdings_value = Column(Float, nullable=False, default=0.0)
     total_value = Column(Float, nullable=False, default=0.0)
+    snapshot_type = Column(Text, nullable=False, default="intraday")
+    snapshot_date = Column(Date, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)

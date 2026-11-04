@@ -3,14 +3,17 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
+from apscheduler.schedulers.background import BackgroundScheduler
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 import json
+import logging
 import os
 
-from .database import Base, engine, get_db
+from .database import Base, SessionLocal, engine, get_db
 from .models import User, Account, Holding, BankAccount, Transaction, PortfolioSnapshot
 from .schemas import SignupRequest, LoginRequest, AuthResponse, AccountResponse, DepositRequest, HoldingResponse, TradeRequest, BankAccountCreate, BankAccountResponse, TransactionResponse, PortfolioSnapshotRequest, PortfolioSnapshotResponse
 from .auth import hash_password, verify_password, create_token, decode_token
@@ -25,8 +28,14 @@ if engine.dialect.name == "postgresql":
     with engine.begin() as connection:
         connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT NOT NULL DEFAULT ''"))
         connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT NOT NULL DEFAULT ''"))
+        connection.execute(text("ALTER TABLE portfolio_snapshots ADD COLUMN IF NOT EXISTS snapshot_type TEXT NOT NULL DEFAULT 'intraday'"))
+        connection.execute(text("ALTER TABLE portfolio_snapshots ADD COLUMN IF NOT EXISTS snapshot_date DATE"))
+        connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_portfolio_snapshot_account_type_date ON portfolio_snapshots (account_id, snapshot_type, snapshot_date)"))
 
 app = FastAPI(title="Sentience Backend")
+logger = logging.getLogger(__name__)
+MARKET_TIMEZONE = ZoneInfo("America/New_York")
+market_close_scheduler: BackgroundScheduler | None = None
 
 def allowed_origins():
     defaults = [
@@ -65,6 +74,134 @@ def finnhub_get(path: str, params: dict):
         raise HTTPException(status_code=exc.code, detail=detail)
     except URLError as exc:
         raise HTTPException(status_code=502, detail=str(exc.reason))
+
+
+def snapshot_response(snapshot: PortfolioSnapshot) -> PortfolioSnapshotResponse:
+    return PortfolioSnapshotResponse(
+        id=snapshot.id,
+        cash_balance=float(snapshot.cash_balance),
+        holdings_value=float(snapshot.holdings_value),
+        total_value=float(snapshot.total_value),
+        snapshot_type=snapshot.snapshot_type,
+        created_at=snapshot.created_at,
+    )
+
+
+def capture_market_close_snapshots(snapshot_date=None):
+    market_date = snapshot_date or datetime.now(MARKET_TIMEZONE).date()
+    db = SessionLocal()
+    try:
+        market_quote = finnhub_get("quote", {"symbol": "SPY"})
+        market_timestamp = int(market_quote.get("t") or 0)
+        if market_timestamp <= 0:
+            logger.warning("Skipping market-close snapshots: SPY quote has no timestamp")
+            return 0
+        quote_date = datetime.fromtimestamp(market_timestamp, timezone.utc).astimezone(MARKET_TIMEZONE).date()
+        if quote_date != market_date:
+            logger.info("Skipping market-close snapshots for %s: market was closed", market_date)
+            return 0
+
+        holdings = db.query(Holding).all()
+        symbols = sorted({holding.symbol for holding in holdings})
+        prices = {"SPY": float(market_quote.get("c") or 0.0)}
+        for symbol in symbols:
+            if symbol == "SPY":
+                continue
+            try:
+                quote = finnhub_get("quote", {"symbol": symbol})
+                quote_timestamp = int(quote.get("t") or 0)
+                symbol_date = datetime.fromtimestamp(quote_timestamp, timezone.utc).astimezone(MARKET_TIMEZONE).date() if quote_timestamp else None
+                price = float(quote.get("c") or 0.0)
+                if symbol_date == market_date and price > 0:
+                    prices[symbol] = price
+            except HTTPException as exc:
+                logger.warning("Close quote failed for %s: %s", symbol, exc.detail)
+
+        holdings_by_account = {}
+        for holding in holdings:
+            holdings_by_account.setdefault(holding.account_id, []).append(holding)
+
+        captured = 0
+        for account in db.query(Account).all():
+            account_holdings = holdings_by_account.get(account.id, [])
+            if any(holding.symbol not in prices for holding in account_holdings):
+                logger.warning("Skipping close snapshot for account %s due to missing quotes", account.id)
+                continue
+            holdings_value = sum(prices[holding.symbol] * holding.shares for holding in account_holdings)
+            cash_balance = float(account.cash_balance or 0.0)
+            snapshot = (
+                db.query(PortfolioSnapshot)
+                .filter(
+                    PortfolioSnapshot.account_id == account.id,
+                    PortfolioSnapshot.snapshot_type == "close",
+                    PortfolioSnapshot.snapshot_date == market_date,
+                )
+                .first()
+            )
+            if snapshot:
+                snapshot.cash_balance = cash_balance
+                snapshot.holdings_value = holdings_value
+                snapshot.total_value = cash_balance + holdings_value
+            else:
+                db.add(PortfolioSnapshot(
+                    account_id=account.id,
+                    cash_balance=cash_balance,
+                    holdings_value=holdings_value,
+                    total_value=cash_balance + holdings_value,
+                    snapshot_type="close",
+                    snapshot_date=market_date,
+                ))
+            captured += 1
+
+        db.commit()
+        logger.info("Captured %s market-close portfolio snapshots for %s", captured, market_date)
+        return captured
+    except Exception:
+        db.rollback()
+        logger.exception("Market-close portfolio snapshot job failed")
+        return 0
+    finally:
+        db.close()
+
+
+@app.on_event("startup")
+def start_market_close_scheduler():
+    global market_close_scheduler
+    enabled = os.environ.get("ENABLE_MARKET_CLOSE_SNAPSHOTS", "true").lower() not in {"0", "false", "no"}
+    if not enabled or market_close_scheduler:
+        return
+    market_close_scheduler = BackgroundScheduler(timezone=MARKET_TIMEZONE)
+    market_close_scheduler.add_job(
+        capture_market_close_snapshots,
+        "cron",
+        day_of_week="mon-fri",
+        hour=16,
+        minute=10,
+        id="market-close-portfolio-snapshots",
+        replace_existing=True,
+        coalesce=True,
+        misfire_grace_time=21600,
+    )
+    market_close_scheduler.start()
+
+    now = datetime.now(MARKET_TIMEZONE)
+    if now.weekday() < 5 and (now.hour, now.minute) >= (16, 10):
+        market_close_scheduler.add_job(
+            capture_market_close_snapshots,
+            "date",
+            run_date=now + timedelta(seconds=2),
+            args=[now.date()],
+            id="market-close-portfolio-snapshots-catchup",
+            replace_existing=True,
+        )
+
+
+@app.on_event("shutdown")
+def stop_market_close_scheduler():
+    global market_close_scheduler
+    if market_close_scheduler:
+        market_close_scheduler.shutdown(wait=False)
+        market_close_scheduler = None
 
 def yahoo_range_and_interval(resolution: str, from_time: int, to: int):
     days = max(1, int((to - from_time) / 86400))
@@ -370,13 +507,7 @@ def record_portfolio_snapshot(
 
     db.commit()
     db.refresh(snapshot)
-    return PortfolioSnapshotResponse(
-        id=snapshot.id,
-        cash_balance=float(snapshot.cash_balance),
-        holdings_value=float(snapshot.holdings_value),
-        total_value=float(snapshot.total_value),
-        created_at=snapshot.created_at,
-    )
+    return snapshot_response(snapshot)
 
 
 @app.get("/portfolio/history", response_model=list[PortfolioSnapshotResponse])
@@ -396,16 +527,7 @@ def portfolio_history(
         .all()
     )
     snapshots.reverse()
-    return [
-        PortfolioSnapshotResponse(
-            id=snapshot.id,
-            cash_balance=float(snapshot.cash_balance),
-            holdings_value=float(snapshot.holdings_value),
-            total_value=float(snapshot.total_value),
-            created_at=snapshot.created_at,
-        )
-        for snapshot in snapshots
-    ]
+    return [snapshot_response(snapshot) for snapshot in snapshots]
 
 
 

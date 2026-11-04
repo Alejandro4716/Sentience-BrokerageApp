@@ -74,4 +74,5 @@ class PortfolioSnapshotResponse(BaseModel):
     cash_balance: float
     holdings_value: float
     total_value: float
+    snapshot_type: str
     created_at: datetime
