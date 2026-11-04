@@ -4,6 +4,8 @@ from uuid import UUID
 # ===== AUTH =====
 
 class SignupRequest(BaseModel):
+    first_name: str
+    last_name: str
     email: EmailStr
     password: str
 
@@ -14,6 +16,8 @@ class LoginRequest(BaseModel):
 class AuthResponse(BaseModel):
     token: str
     user_id: UUID
+    first_name: str
+    last_name: str
 
 
 # ===== HOLDINGS & ACCOUNT =====

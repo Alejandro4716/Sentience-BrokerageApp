@@ -51,8 +51,10 @@ struct MainScreen: View {
             await portfolio.refreshBackend()
             showAuth = !portfolio.isLoggedIn
         }
-        .sheet(isPresented: $showAuth) {
-            AuthGateView().environmentObject(portfolio)
+        .fullScreenCover(isPresented: $showAuth) {
+            AuthGateView()
+                .environmentObject(portfolio)
+                .interactiveDismissDisabled()
         }
         .sheet(isPresented: .constant(portfolio.needsBankLink)) {
             LinkBankSheet()

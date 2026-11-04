@@ -807,6 +807,7 @@ canvas {
 
 .auth-dialog {
   width: min(420px, calc(100vw - 32px));
+  padding: 16px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
@@ -815,6 +816,43 @@ canvas {
 
 .auth-dialog::backdrop {
   background: rgba(0, 0, 0, .72);
+}
+
+.auth-dialog.gate-mode {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(182, 232, 82, .07), transparent 34%),
+    repeating-linear-gradient(to bottom, transparent 0, transparent 18px, rgba(255, 255, 255, .016) 19px),
+    #171717;
+}
+
+.auth-dialog.gate-mode[open] {
+  display: grid;
+  place-items: center;
+}
+
+.auth-dialog.gate-mode::backdrop {
+  background: #171717;
+}
+
+.auth-dialog.gate-mode .dialog-close {
+  display: none;
+}
+
+.auth-dialog.gate-mode .auth-form {
+  width: min(440px, calc(100vw - 40px));
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(29, 29, 29, .94);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, .35);
 }
 
 .dialog-close {
@@ -833,6 +871,26 @@ canvas {
   display: grid;
   gap: 12px;
   padding: 0 12px 12px;
+}
+
+.auth-heading {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 8px;
+}
+
+.auth-heading .eyebrow {
+  color: var(--vault);
+}
+
+.auth-heading .muted {
+  font-size: 13px;
+}
+
+.auth-name-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .text-button {
@@ -945,6 +1003,14 @@ canvas {
   .welcome-enter {
     bottom: 7vh;
     white-space: nowrap;
+  }
+
+  .auth-name-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-dialog.gate-mode .auth-form {
+    padding: 24px;
   }
 
   .topbar {

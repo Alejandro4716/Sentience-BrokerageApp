@@ -196,14 +196,19 @@
     </main>
 
     <dialog class="auth-dialog" id="authDialog">
-      <form method="dialog" class="dialog-close"><button title="Close">×</button></form>
+      <form method="dialog" class="dialog-close"><button id="authClose" title="Close">×</button></form>
       <form class="auth-form" id="authForm">
-        <div>
-          <p class="eyebrow">BACKEND SESSION</p>
+        <div class="auth-heading">
+          <p class="eyebrow">SENTIENCE</p>
           <h2 id="authHeading">Log in</h2>
+          <p class="muted" id="authSubtitle">Enter your credentials to continue.</p>
         </div>
-        <input id="emailInput" type="email" placeholder="Email" required />
-        <input id="passwordInput" type="password" placeholder="Password" required />
+        <div class="auth-name-fields hidden" id="authNameFields">
+          <input id="firstNameInput" type="text" placeholder="First name" autocomplete="given-name" />
+          <input id="lastNameInput" type="text" placeholder="Last name" autocomplete="family-name" />
+        </div>
+        <input id="emailInput" type="email" placeholder="Email" autocomplete="email" required />
+        <input id="passwordInput" type="password" placeholder="Password" autocomplete="current-password" required />
         <button class="primary-button" type="submit" id="authSubmit">Log in</button>
         <button class="text-button" type="button" id="modeToggle">Need an account? Sign up</button>
         <button class="danger-button hidden" type="button" id="logoutButton">Sign out</button>

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,6 +19,10 @@ from decimal import Decimal
 
 # Create DB tables
 Base.metadata.create_all(bind=engine)
+
+with engine.begin() as connection:
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS first_name TEXT NOT NULL DEFAULT ''"))
+    connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_name TEXT NOT NULL DEFAULT ''"))
 
 app = FastAPI(title="Sentience Backend")
 
@@ -205,12 +210,22 @@ def market_candles(
 # SIGNUP
 @app.post("/auth/signup", response_model=AuthResponse)
 def signup(data: SignupRequest, db: Session = Depends(get_db)):
+    first_name = data.first_name.strip()
+    last_name = data.last_name.strip()
+    if not first_name or not last_name:
+        raise HTTPException(status_code=400, detail="First and last name are required")
+
     # check if email in use
     if db.query(User).filter(User.email == data.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # create user
-    user = User(email=data.email, password_hash=hash_password(data.password))
+    user = User(
+        first_name=first_name,
+        last_name=last_name,
+        email=data.email,
+        password_hash=hash_password(data.password),
+    )
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -221,7 +236,12 @@ def signup(data: SignupRequest, db: Session = Depends(get_db)):
     db.commit()
 
     token = create_token(user.id)
-    return AuthResponse(token=token, user_id=user.id)
+    return AuthResponse(
+        token=token,
+        user_id=user.id,
+        first_name=user.first_name,
+        last_name=user.last_name,
+    )
 
 # LOGIN
 @app.post("/auth/login", response_model=AuthResponse)
@@ -231,7 +251,12 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_token(user.id)
-    return AuthResponse(token=token, user_id=user.id)
+    return AuthResponse(
+        token=token,
+        user_id=user.id,
+        first_name=user.first_name or "",
+        last_name=user.last_name or "",
+    )
 
 
 @app.post("/bank-accounts", response_model=BankAccountResponse)

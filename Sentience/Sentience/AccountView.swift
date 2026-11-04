@@ -30,6 +30,11 @@ struct AccountView: View {
                                     .font(.system(size: 22, weight: .bold))
                                     .foregroundColor(.black)
                             )
+                        if !portfolio.displayName.isEmpty {
+                            Text(portfolio.displayName)
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(.white)
+                        }
                         if !portfolio.userEmail.isEmpty {
                             Text(portfolio.userEmail)
                                 .font(.system(size: 14, weight: .medium))

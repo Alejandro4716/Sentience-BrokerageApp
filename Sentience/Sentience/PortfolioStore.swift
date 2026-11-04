@@ -22,6 +22,8 @@ final class PortfolioStore: ObservableObject {
     }
 
     @AppStorage("userEmail") var userEmail: String = ""
+    @AppStorage("userFirstName") var userFirstName: String = ""
+    @AppStorage("userLastName") var userLastName: String = ""
 
     init() {
         let keychainToken = KeychainHelper.shared.load(for: "authToken")
@@ -40,11 +42,23 @@ final class PortfolioStore: ObservableObject {
     }
 
     var avatarInitials: String {
+        if let first = userFirstName.first, let last = userLastName.first {
+            return "\(first)\(last)".uppercased()
+        }
+        if !userFirstName.isEmpty {
+            return userFirstName.prefix(2).uppercased()
+        }
         let parts = userEmail.components(separatedBy: "@").first?
             .components(separatedBy: CharacterSet(charactersIn: "._-")) ?? []
         let letters = parts.compactMap { $0.first?.uppercased() }
         if letters.count >= 2 { return letters[0] + letters[1] }
         return userEmail.prefix(2).uppercased()
+    }
+
+    var displayName: String {
+        [userFirstName, userLastName]
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
     }
 
     //UI updates if these changes
@@ -99,6 +113,8 @@ final class PortfolioStore: ObservableObject {
             let auth = try await BackendAPI.shared.login(email: email, password: password)
             authToken = auth.token
             userEmail = email
+            userFirstName = auth.first_name
+            userLastName = auth.last_name
             await refreshBackend()
         } catch {
             errorMessage = error.localizedDescription
@@ -106,11 +122,18 @@ final class PortfolioStore: ObservableObject {
     }
 
     @MainActor
-    func signupBackend(email: String, password: String) async {
+    func signupBackend(firstName: String, lastName: String, email: String, password: String) async {
         do {
-            let auth = try await BackendAPI.shared.signup(email: email, password: password)
+            let auth = try await BackendAPI.shared.signup(
+                firstName: firstName,
+                lastName: lastName,
+                email: email,
+                password: password
+            )
             authToken = auth.token
             userEmail = email
+            userFirstName = auth.first_name
+            userLastName = auth.last_name
             await refreshBackend()
         } catch {
             errorMessage = error.localizedDescription
@@ -121,6 +144,8 @@ final class PortfolioStore: ObservableObject {
     func logoutBackend() {
         authToken = ""
         userEmail = ""
+        userFirstName = ""
+        userLastName = ""
         banks = []
         txns = []
         cashBalance = 0
@@ -256,4 +281,3 @@ private func isUnauthorized(_ error: Error) -> Bool {
     }
     return false
 }
-

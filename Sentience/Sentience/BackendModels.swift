@@ -8,12 +8,19 @@
 import Foundation
 
 // Auth
-struct BackendSignupRequest: Codable { let email: String; let password: String }
+struct BackendSignupRequest: Codable {
+    let first_name: String
+    let last_name: String
+    let email: String
+    let password: String
+}
 struct BackendLoginRequest: Codable { let email: String; let password: String }
 
 struct BackendAuthResponse: Codable {
     let token: String
     let user_id: String
+    let first_name: String
+    let last_name: String
 }
 
 // Bank accounts

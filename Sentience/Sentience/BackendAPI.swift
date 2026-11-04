@@ -58,8 +58,13 @@ final class BackendAPI {
     }
 
     //signs up user
-    func signup(email: String, password: String) async throws -> BackendAuthResponse {
-        let body = try JSONEncoder().encode(BackendSignupRequest(email: email, password: password))
+    func signup(firstName: String, lastName: String, email: String, password: String) async throws -> BackendAuthResponse {
+        let body = try JSONEncoder().encode(BackendSignupRequest(
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            password: password
+        ))
         let req = try makeRequest(path: "/auth/signup", method: "POST", body: body)
         return try await run(req, as: BackendAuthResponse.self)
     }

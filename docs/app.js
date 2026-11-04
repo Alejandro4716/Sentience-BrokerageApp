@@ -11,6 +11,8 @@ const COMPANY_NAMES = {
 const state = {
   token: localStorage.getItem("sentience.token") || "",
   email: localStorage.getItem("sentience.email") || "",
+  firstName: localStorage.getItem("sentience.firstName") || "",
+  lastName: localStorage.getItem("sentience.lastName") || "",
   account: { cash_balance: 0, holdings: [] },
   banks: [],
   txns: [],
@@ -20,6 +22,7 @@ const state = {
   selectedSymbol: "",
   selectedPeriod: "1M",
   authMode: "login",
+  hasEntered: false,
   activeView: "portfolio"
 };
 
@@ -27,12 +30,16 @@ const $ = (id) => document.getElementById(id);
 const money = (value) => (Number(value) || 0).toLocaleString("en-US", { style: "currency", currency: "USD" });
 const pct = (value) => `${Number(value) >= 0 ? "+" : ""}${(Number(value) || 0).toFixed(2)}%`;
 const companyName = (symbol) => COMPANY_NAMES[symbol] || symbol;
-const initials = (email) => {
+const initials = (firstName, lastName, email) => {
+  if (firstName && lastName) return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  if (firstName) return firstName.slice(0, 2).toUpperCase();
   if (!email) return "AM";
   const base = email.split("@")[0].split(/[._-]/).filter(Boolean);
   const chars = base.map((part) => part[0]?.toUpperCase()).filter(Boolean);
   return (chars.length >= 2 ? chars.slice(0, 2).join("") : email.slice(0, 2).toUpperCase());
 };
+
+const fullName = () => [state.firstName, state.lastName].filter(Boolean).join(" ");
 
 function toast(message) {
   const node = $("toast");
@@ -44,18 +51,34 @@ function toast(message) {
 
 function enterApp() {
   const welcome = $("welcomeScreen");
-  const appShell = $("appShell");
   if (welcome.classList.contains("is-leaving")) return;
 
+  state.hasEntered = true;
   welcome.classList.add("is-leaving");
-  appShell.classList.remove("is-hidden");
-  appShell.removeAttribute("inert");
-  appShell.setAttribute("aria-hidden", "false");
 
   window.setTimeout(() => {
     welcome.hidden = true;
-    $("refreshButton").focus({ preventScroll: true });
+    if (state.token) {
+      showAppShell();
+    } else {
+      openAuth(true);
+    }
   }, 650);
+}
+
+function showAppShell() {
+  const appShell = $("appShell");
+  appShell.classList.remove("is-hidden");
+  appShell.removeAttribute("inert");
+  appShell.setAttribute("aria-hidden", "false");
+  window.setTimeout(() => $("refreshButton").focus({ preventScroll: true }), 50);
+}
+
+function hideAppShell() {
+  const appShell = $("appShell");
+  appShell.classList.add("is-hidden");
+  appShell.setAttribute("inert", "");
+  appShell.setAttribute("aria-hidden", "true");
 }
 
 async function api(path, options = {}) {
@@ -142,7 +165,7 @@ function render() {
 function renderSession() {
   const loggedIn = Boolean(state.token);
   $("sessionPill").innerHTML = `<span class="dot ${loggedIn ? "" : "off"}"></span><span>${loggedIn ? "Backend connected" : "Logged out"}</span>`;
-  $("accountAvatar").textContent = initials(state.email);
+  $("accountAvatar").textContent = initials(state.firstName, state.lastName, state.email);
   $("logoutButton").classList.toggle("hidden", !loggedIn);
   renderMarketState();
 }
@@ -258,8 +281,10 @@ function marketRow(symbol) {
 
 function renderAccount() {
   const loggedIn = Boolean(state.token);
-  $("accountEmail").textContent = loggedIn ? state.email : "Not signed in";
-  $("accountStatus").textContent = loggedIn ? "Session active with the public Sentience backend." : "Connect to the backend to manage your brokerage account.";
+  $("accountEmail").textContent = loggedIn ? (fullName() || state.email) : "Not signed in";
+  $("accountStatus").textContent = loggedIn
+    ? (fullName() ? state.email : "Session active with the public Sentience backend.")
+    : "Connect to the backend to manage your brokerage account.";
   $("accountAuthButton").textContent = loggedIn ? "Manage session" : "Log in / Sign up";
   $("bankRows").innerHTML = state.banks.length ? state.banks.map((b) => `<div class="row bank-row">
     <div><strong>Account: X${b.account_last4}</strong></div>
@@ -346,18 +371,29 @@ function drawChart(ctx, width, height, prices) {
 
 async function authSubmit(event) {
   event.preventDefault();
+  const firstName = $("firstNameInput").value.trim();
+  const lastName = $("lastNameInput").value.trim();
   const email = $("emailInput").value.trim();
   const password = $("passwordInput").value;
+  const payload = state.authMode === "signup"
+    ? { first_name: firstName, last_name: lastName, email, password }
+    : { email, password };
   try {
     const auth = await api(state.authMode === "login" ? "/auth/login" : "/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify(payload)
     });
     state.token = auth.token;
     state.email = email;
+    state.firstName = auth.first_name || firstName;
+    state.lastName = auth.last_name || lastName;
     localStorage.setItem("sentience.token", state.token);
     localStorage.setItem("sentience.email", state.email);
+    localStorage.setItem("sentience.firstName", state.firstName);
+    localStorage.setItem("sentience.lastName", state.lastName);
     $("authDialog").close();
+    $("authDialog").classList.remove("gate-mode");
+    showAppShell();
     toast("Backend session connected.");
     await refreshBackend();
   } catch (error) {
@@ -368,14 +404,22 @@ async function authSubmit(event) {
 function logout(showToast = true) {
   state.token = "";
   state.email = "";
+  state.firstName = "";
+  state.lastName = "";
   state.account = { cash_balance: 0, holdings: [] };
   state.banks = [];
   state.txns = [];
   localStorage.removeItem("sentience.token");
   localStorage.removeItem("sentience.email");
+  localStorage.removeItem("sentience.firstName");
+  localStorage.removeItem("sentience.lastName");
   if (showToast) toast("Signed out.");
   render();
   renderChart();
+  if (state.hasEntered) {
+    hideAppShell();
+    openAuth(true);
+  }
 }
 
 async function placeTrade(side, symbol, shares) {
@@ -418,17 +462,17 @@ function wireEvents() {
   });
   $("refreshButton").addEventListener("click", () => Promise.all([refreshBackend(), refreshMarkets()]));
   $("refreshMarkets").addEventListener("click", refreshMarkets);
-  $("accountAuthButton").addEventListener("click", openAuth);
+  $("accountAuthButton").addEventListener("click", () => openAuth(false));
   $("authForm").addEventListener("submit", authSubmit);
+  $("authDialog").addEventListener("cancel", (event) => {
+    if ($("authDialog").classList.contains("gate-mode")) event.preventDefault();
+  });
   $("logoutButton").addEventListener("click", () => {
     $("authDialog").close();
     logout();
   });
   $("modeToggle").addEventListener("click", () => {
-    state.authMode = state.authMode === "login" ? "signup" : "login";
-    $("authHeading").textContent = state.authMode === "login" ? "Log in" : "Sign up";
-    $("authSubmit").textContent = state.authMode === "login" ? "Log in" : "Create account";
-    $("modeToggle").textContent = state.authMode === "login" ? "Need an account? Sign up" : "Already have an account? Log in";
+    setAuthMode(state.authMode === "login" ? "signup" : "login");
   });
   $("watchlistForm").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -497,10 +541,30 @@ function wireEvents() {
   window.addEventListener("resize", () => renderChart());
 }
 
-function openAuth() {
+function setAuthMode(mode) {
+  state.authMode = mode;
+  const signup = mode === "signup";
+  $("authNameFields").classList.toggle("hidden", !signup);
+  $("firstNameInput").required = signup;
+  $("lastNameInput").required = signup;
+  $("passwordInput").autocomplete = signup ? "new-password" : "current-password";
+  $("authHeading").textContent = signup ? "Create account" : "Log in";
+  $("authSubtitle").textContent = signup
+    ? "Tell us who you are, then choose your login credentials."
+    : "Enter your email and password to continue.";
+  $("authSubmit").textContent = signup ? "Create account" : "Log in";
+  $("modeToggle").textContent = signup ? "Already have an account? Log in" : "Need an account? Sign up";
+}
+
+function openAuth(gateMode = false) {
+  setAuthMode("login");
+  $("authDialog").classList.toggle("gate-mode", gateMode);
+  $("firstNameInput").value = state.firstName;
+  $("lastNameInput").value = state.lastName;
   $("emailInput").value = state.email;
   $("passwordInput").value = "";
-  $("authDialog").showModal();
+  if (!$("authDialog").open) $("authDialog").showModal();
+  window.setTimeout(() => $("emailInput").focus(), 50);
 }
 
 async function showTradeQuote(symbol) {
