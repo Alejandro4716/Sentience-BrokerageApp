@@ -142,7 +142,6 @@ function render() {
 function renderSession() {
   const loggedIn = Boolean(state.token);
   $("sessionPill").innerHTML = `<span class="dot ${loggedIn ? "" : "off"}"></span><span>${loggedIn ? "Backend connected" : "Logged out"}</span>`;
-  $("authButton").textContent = initials(state.email);
   $("accountAvatar").textContent = initials(state.email);
   $("logoutButton").classList.toggle("hidden", !loggedIn);
   renderMarketState();
@@ -419,7 +418,6 @@ function wireEvents() {
   });
   $("refreshButton").addEventListener("click", () => Promise.all([refreshBackend(), refreshMarkets()]));
   $("refreshMarkets").addEventListener("click", refreshMarkets);
-  $("authButton").addEventListener("click", openAuth);
   $("accountAuthButton").addEventListener("click", openAuth);
   $("authForm").addEventListener("submit", authSubmit);
   $("logoutButton").addEventListener("click", () => {

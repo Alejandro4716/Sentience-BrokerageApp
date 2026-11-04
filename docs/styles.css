@@ -228,18 +228,13 @@ button {
   color: var(--vault);
 }
 
-.brand-mark, .avatar, .big-avatar {
+.big-avatar {
   display: grid;
   place-items: center;
   border-radius: 999px;
   background: var(--vault);
   color: #080808;
   font-weight: 900;
-}
-
-.brand-mark {
-  width: 32px;
-  height: 32px;
 }
 
 .nav-tabs {
@@ -330,7 +325,7 @@ h1 {
   font-weight: 700;
 }
 
-.icon-button, .avatar {
+.icon-button {
   width: 38px;
   height: 38px;
   border: 0;
@@ -342,10 +337,6 @@ h1 {
   background: var(--panel);
   color: var(--text);
   font-size: 18px;
-}
-
-.avatar {
-  font-size: 12px;
 }
 
 .view {
