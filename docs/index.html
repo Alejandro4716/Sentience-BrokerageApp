@@ -7,7 +7,25 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="app-shell">
+    <section class="welcome-screen" id="welcomeScreen" aria-labelledby="welcomeTitle">
+      <div class="welcome-glow" aria-hidden="true"></div>
+      <div class="welcome-brand">
+        <h1 id="welcomeTitle">SENTIENCE</h1>
+        <div class="welcome-rule" aria-hidden="true">
+          <span></span>
+          <i></i>
+          <span></span>
+        </div>
+        <p>by AMPS Financial</p>
+      </div>
+      <button class="welcome-enter" id="enterApp" type="button">
+        <span class="welcome-enter-dot" aria-hidden="true"></span>
+        <span>Click to Enter</span>
+        <small>or press Enter</small>
+      </button>
+    </section>
+
+    <main class="app-shell is-hidden" id="appShell" aria-hidden="true" inert>
       <aside class="rail" aria-label="Primary">
         <div class="brand">
           <span class="brand-mark">S</span>

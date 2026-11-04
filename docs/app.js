@@ -42,6 +42,22 @@ function toast(message) {
   toast.timer = setTimeout(() => node.classList.remove("show"), 3200);
 }
 
+function enterApp() {
+  const welcome = $("welcomeScreen");
+  const appShell = $("appShell");
+  if (welcome.classList.contains("is-leaving")) return;
+
+  welcome.classList.add("is-leaving");
+  appShell.classList.remove("is-hidden");
+  appShell.removeAttribute("inert");
+  appShell.setAttribute("aria-hidden", "false");
+
+  window.setTimeout(() => {
+    welcome.hidden = true;
+    $("refreshButton").focus({ preventScroll: true });
+  }, 650);
+}
+
 async function api(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
   if (state.token) headers.Authorization = `Bearer ${state.token}`;
@@ -391,6 +407,10 @@ async function trade(event, side) {
 }
 
 function wireEvents() {
+  $("enterApp").addEventListener("click", enterApp);
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !$("welcomeScreen").hidden) enterApp();
+  });
   $("navTabs").addEventListener("click", (event) => {
     const tab = event.target.closest(".nav-tab");
     if (!tab) return;

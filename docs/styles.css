@@ -22,6 +22,166 @@ body {
   color: var(--text);
 }
 
+.welcome-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(182, 232, 82, .075), transparent 31%),
+    #171717;
+  transition: opacity .65s ease, visibility .65s ease;
+}
+
+.welcome-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 18px,
+    rgba(255, 255, 255, .018) 19px
+  );
+  opacity: .7;
+  pointer-events: none;
+}
+
+.welcome-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, .25) 100%);
+  pointer-events: none;
+}
+
+.welcome-screen.is-leaving {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.welcome-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(76vw, 1080px);
+  height: min(46vw, 520px);
+  border-radius: 50%;
+  background: rgba(182, 232, 82, .025);
+  filter: blur(48px);
+  transform: translate(-50%, -50%);
+}
+
+.welcome-brand {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  transform: translateY(-3vh);
+  animation: welcome-rise .8s ease-out both;
+}
+
+.welcome-brand h1 {
+  margin: 0;
+  color: var(--vault);
+  font-size: clamp(58px, 8vw, 112px);
+  font-weight: 900;
+  letter-spacing: -.045em;
+  line-height: .88;
+  text-shadow: 0 0 34px rgba(182, 232, 82, .06);
+}
+
+.welcome-rule {
+  display: grid;
+  grid-template-columns: minmax(52px, 8vw) 5px minmax(52px, 8vw);
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.welcome-rule span {
+  height: 1px;
+  background: rgba(182, 232, 82, .35);
+}
+
+.welcome-rule i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--vault);
+  box-shadow: 0 0 10px rgba(182, 232, 82, .45);
+}
+
+.welcome-brand p {
+  margin: 20px 0 0;
+  color: #626262;
+  font-size: clamp(12px, 1.1vw, 15px);
+  letter-spacing: .32em;
+}
+
+.welcome-enter {
+  position: absolute;
+  z-index: 2;
+  bottom: clamp(52px, 10vh, 110px);
+  left: 50%;
+  display: grid;
+  grid-template-columns: 6px auto;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 22px;
+  border: 0;
+  background: transparent;
+  color: #747474;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .4em;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+  transition: color .2s ease;
+}
+
+.welcome-enter:hover,
+.welcome-enter:focus-visible {
+  color: #a4a4a4;
+}
+
+.welcome-enter:focus-visible {
+  border-radius: 8px;
+  outline: 1px solid rgba(182, 232, 82, .45);
+  outline-offset: 4px;
+}
+
+.welcome-enter-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vault);
+  box-shadow: 0 0 10px rgba(182, 232, 82, .35);
+  animation: welcome-pulse 1.25s ease-in-out infinite alternate;
+}
+
+.welcome-enter small {
+  grid-column: 1 / -1;
+  margin-top: -5px;
+  color: #474747;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .22em;
+}
+
+@keyframes welcome-rise {
+  from { opacity: 0; transform: translateY(calc(-3vh + 22px)); }
+  to { opacity: 1; transform: translateY(-3vh); }
+}
+
+@keyframes welcome-pulse {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: .28; transform: scale(1.55); }
+}
+
 button, input, select {
   font: inherit;
 }
@@ -34,6 +194,13 @@ button {
   display: grid;
   grid-template-columns: 232px minmax(0, 1fr);
   min-height: 100vh;
+  opacity: 1;
+  transition: opacity .55s ease .15s;
+}
+
+.app-shell.is-hidden {
+  visibility: hidden;
+  opacity: 0;
 }
 
 .rail {
@@ -772,6 +939,23 @@ canvas {
 }
 
 @media (max-width: 540px) {
+  .welcome-brand h1 {
+    font-size: clamp(44px, 14vw, 72px);
+  }
+
+  .welcome-brand p {
+    font-size: 11px;
+  }
+
+  .welcome-rule {
+    margin-top: 24px;
+  }
+
+  .welcome-enter {
+    bottom: 7vh;
+    white-space: nowrap;
+  }
+
   .topbar {
     align-items: flex-start;
   }
@@ -794,5 +978,17 @@ canvas {
 
   .row .hide-mobile {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-brand,
+  .welcome-enter-dot {
+    animation: none;
+  }
+
+  .welcome-screen,
+  .app-shell {
+    transition: none;
   }
 }
