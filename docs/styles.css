@@ -645,6 +645,30 @@ canvas {
   flex: 1;
 }
 
+@media (min-width: 901px) {
+  .feature-panel canvas {
+    height: 300px;
+  }
+
+  .portfolio-side {
+    grid-template-rows: minmax(260px, .95fr) minmax(210px, 1.05fr);
+    align-content: stretch;
+  }
+
+  .portfolio-side .metrics {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+
+  .portfolio-side .metric,
+  .portfolio-side .portfolio-action-panel {
+    min-height: 0;
+  }
+
+  .portfolio-side .quick-trade-form {
+    align-content: center;
+  }
+}
+
 .ghost-button, .inline-form button, .search-strip button, .money-actions button,
 .bank-form button, .primary-button, .danger-button {
   min-height: 38px;
